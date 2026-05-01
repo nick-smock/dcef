@@ -294,6 +294,173 @@
 
     .fade-in { opacity: 0; transform: translateY(20px); transition: opacity 0.6s ease, transform 0.6s ease; }
     .fade-in.visible { opacity: 1; transform: translateY(0); }
+
+    /* ── PLAYBACK ─────────────────────────────────────── */
+    #playback { background: var(--surface); border-bottom: 1px solid var(--border); }
+
+    .playback-wrap {
+      display: grid;
+      grid-template-columns: 1fr 280px;
+      gap: 1.5rem;
+      align-items: start;
+    }
+
+    .playback-canvas-wrap {
+      background: var(--surface-3);
+      border: 1px solid var(--border);
+      position: relative;
+      overflow: hidden;
+    }
+
+    #playback-canvas { display: block; width: 100%; cursor: crosshair; }
+
+    .playback-overlay-label {
+      position: absolute;
+      top: 1rem; left: 1rem;
+      font-family: 'Share Tech Mono', monospace;
+      font-size: 0.6rem; letter-spacing: 0.18em;
+      color: rgba(255,255,255,0.25); text-transform: uppercase;
+      pointer-events: none;
+    }
+
+    .playback-synthetic {
+      position: absolute;
+      top: 1rem; right: 1rem;
+      font-family: 'Share Tech Mono', monospace;
+      font-size: 0.58rem; letter-spacing: 0.12em;
+      color: var(--text-dimmer); border: 1px solid var(--text-dimmer);
+      padding: 0.15rem 0.5rem; text-transform: uppercase;
+      pointer-events: none;
+    }
+
+    /* Controls bar */
+    .playback-controls {
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+      padding: 0.9rem 1.2rem;
+      background: var(--surface-2);
+      border-top: 1px solid var(--border);
+      flex-wrap: wrap;
+    }
+
+    .ctrl-btn {
+      display: flex; align-items: center; justify-content: center;
+      width: 36px; height: 36px;
+      background: transparent;
+      border: 1px solid var(--border-orange);
+      color: var(--orange);
+      cursor: pointer;
+      transition: background 0.2s;
+      flex-shrink: 0;
+    }
+    .ctrl-btn:hover { background: var(--orange-dim); }
+    .ctrl-btn svg { width: 16px; height: 16px; fill: var(--orange); }
+
+    .speed-btns { display: flex; gap: 0; }
+    .speed-btn {
+      font-family: 'Share Tech Mono', monospace;
+      font-size: 0.65rem; letter-spacing: 0.1em;
+      padding: 0.4rem 0.75rem;
+      background: transparent;
+      border: 1px solid var(--border);
+      color: var(--text-dim);
+      cursor: pointer;
+      transition: all 0.15s;
+      margin-left: -1px;
+    }
+    .speed-btn:hover { color: var(--orange); border-color: var(--border-orange); z-index: 1; }
+    .speed-btn.active { background: var(--orange-dim); color: var(--orange); border-color: var(--border-orange); z-index: 1; }
+
+    .scrubber-wrap { flex: 1; min-width: 120px; }
+    input[type=range].scrubber {
+      width: 100%;
+      -webkit-appearance: none;
+      appearance: none;
+      height: 2px;
+      background: var(--border);
+      outline: none;
+      cursor: pointer;
+    }
+    input[type=range].scrubber::-webkit-slider-thumb {
+      -webkit-appearance: none;
+      width: 12px; height: 12px;
+      background: var(--orange);
+      border-radius: 50%;
+      cursor: pointer;
+    }
+
+    .ctrl-time {
+      font-family: 'Share Tech Mono', monospace;
+      font-size: 0.65rem; letter-spacing: 0.1em;
+      color: var(--text-dim); white-space: nowrap;
+    }
+
+    /* HUD panel */
+    .playback-hud {
+      display: flex;
+      flex-direction: column;
+      gap: 1px;
+      background: var(--border);
+      border: 1px solid var(--border);
+      height: fit-content;
+    }
+
+    .hud-header {
+      background: var(--surface-3);
+      padding: 0.8rem 1.2rem;
+      border-bottom: 1px solid var(--border-orange);
+    }
+    .hud-header-title {
+      font-family: 'Share Tech Mono', monospace;
+      font-size: 0.6rem; letter-spacing: 0.2em;
+      color: var(--orange); text-transform: uppercase;
+    }
+
+    .hud-row {
+      background: var(--surface);
+      padding: 0.75rem 1.2rem;
+      display: flex;
+      flex-direction: column;
+      gap: 0.2rem;
+      transition: background 0.15s;
+    }
+    .hud-row:hover { background: var(--surface-2); }
+
+    .hud-key {
+      font-family: 'Share Tech Mono', monospace;
+      font-size: 0.55rem; letter-spacing: 0.18em;
+      color: var(--text-dimmer); text-transform: uppercase;
+    }
+    .hud-val {
+      font-family: 'Barlow Condensed', sans-serif;
+      font-weight: 700; font-size: 1.3rem;
+      color: var(--text); line-height: 1;
+    }
+    .hud-val.orange { color: var(--orange); }
+    .hud-val.green  { color: var(--green); }
+    .hud-val.dim    { color: var(--text-dim); }
+
+    .hud-det-true  { color: var(--green); }
+    .hud-det-false { color: var(--text-dimmer); }
+
+    .legend-row {
+      display: flex; align-items: center; gap: 0.6rem;
+      padding: 0.6rem 1.2rem;
+      background: var(--surface);
+      border-top: 1px solid var(--border);
+    }
+    .legend-dot { width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0; }
+    .legend-label { font-family: 'Share Tech Mono', monospace; font-size: 0.62rem; letter-spacing: 0.1em; color: var(--text-dim); }
+
+    .progress-bar-wrap {
+      height: 2px; background: var(--border);
+      margin: 0; position: relative;
+    }
+    .progress-bar-fill {
+      height: 100%; background: var(--orange);
+      width: 0%; transition: width 0.1s linear;
+    }
   </style>
 </head>
 <body>
@@ -521,6 +688,90 @@
   </div>
 </section>
 
+<!-- ── PLAYBACK ────────────────────────────────────────────── -->
+<section id="playback">
+  <div class="container">
+    <p class="section-label">Live Playback</p>
+    <div class="section-title">Scenario Alpha — Track Replay</div>
+
+    <div class="playback-wrap fade-in">
+
+      <!-- Canvas -->
+      <div class="playback-canvas-wrap">
+        <span class="playback-overlay-label">Top-Down View · WGS84 · 1Hz Telemetry</span>
+        <span class="playback-synthetic">Synthetic Data</span>
+        <canvas id="playback-canvas" height="520"></canvas>
+        <div class="progress-bar-wrap"><div class="progress-bar-fill" id="prog-fill"></div></div>
+        <div class="playback-controls">
+          <button class="ctrl-btn" id="btn-play" title="Play / Pause">
+            <svg id="play-icon" viewBox="0 0 16 16"><polygon points="4,2 13,8 4,14"/></svg>
+          </button>
+          <button class="ctrl-btn" id="btn-reset" title="Reset">
+            <svg viewBox="0 0 16 16" fill="none" stroke="var(--orange)" stroke-width="1.5" stroke-linecap="round"><polyline points="2,8 2,3 7,3"/><path d="M2,3 a6,6 0 1,1 -1,5"/></svg>
+          </button>
+          <div class="speed-btns">
+            <button class="speed-btn active" data-speed="1">1×</button>
+            <button class="speed-btn" data-speed="5">5×</button>
+            <button class="speed-btn" data-speed="10">10×</button>
+            <button class="speed-btn" data-speed="20">20×</button>
+          </div>
+          <div class="scrubber-wrap">
+            <input type="range" class="scrubber" id="scrubber" min="0" max="161" value="0" step="1">
+          </div>
+          <span class="ctrl-time" id="ctrl-time">00:00 / 02:42</span>
+        </div>
+      </div>
+
+      <!-- HUD -->
+      <div class="playback-hud">
+        <div class="hud-header">
+          <div class="hud-header-title">Telemetry Readout</div>
+        </div>
+        <div class="hud-row">
+          <div class="hud-key">Timestamp UTC</div>
+          <div class="hud-val dim" id="hud-ts" style="font-size:0.9rem;font-family:'Share Tech Mono',monospace;font-weight:400;">—</div>
+        </div>
+        <div class="hud-row">
+          <div class="hud-key">Slant Range</div>
+          <div class="hud-val orange" id="hud-range">— m</div>
+        </div>
+        <div class="hud-row">
+          <div class="hud-key">Position Error</div>
+          <div class="hud-val" id="hud-err">— m</div>
+        </div>
+        <div class="hud-row">
+          <div class="hud-key">Detection</div>
+          <div class="hud-val" id="hud-det">—</div>
+        </div>
+        <div class="hud-row">
+          <div class="hud-key">Heading</div>
+          <div class="hud-val" id="hud-hdg">—°</div>
+        </div>
+        <div class="hud-row">
+          <div class="hud-key">Ground Speed</div>
+          <div class="hud-val" id="hud-spd">— m/s</div>
+        </div>
+        <div class="hud-row">
+          <div class="hud-key">RF Packet Loss</div>
+          <div class="hud-val" id="hud-rf">—%</div>
+        </div>
+        <div class="hud-row">
+          <div class="hud-key">DCEF Tier</div>
+          <div class="hud-val orange" id="hud-tier">—</div>
+        </div>
+        <div class="hud-row">
+          <div class="hud-key">Profile Phase</div>
+          <div class="hud-val dim" id="hud-phase" style="font-size:1rem;">—</div>
+        </div>
+        <div class="legend-row"><div class="legend-dot" style="background:#f26115"></div><div class="legend-label">Truth track (RTK ≤30cm)</div></div>
+        <div class="legend-row"><div class="legend-dot" style="background:#4a9eff"></div><div class="legend-label">Radar-reported track</div></div>
+        <div class="legend-row"><div class="legend-dot" style="background:rgba(255,255,255,0.25);border-radius:0;"></div><div class="legend-label">Range rings (100m steps)</div></div>
+      </div>
+
+    </div>
+  </div>
+</section>
+
 <!-- ── HOW TO USE ─────────────────────────────────────────── -->
 <section id="howto">
   <div class="container">
@@ -625,6 +876,301 @@ pod_curve = t2.<span class="fn">groupby</span>(
 </footer>
 
 <script>
+// ── FLIGHT DATA (embedded from scenario_alpha_correlated.csv) ──
+// Columns: [timestamp, lat_truth, lon_truth, sensor_lat, sensor_lon,
+//           range_m, pos_error_m, detection_flag, hdg_deg, gnd_speed_ms,
+//           rf_packet_loss_pct, tier]
+const FLIGHT_DATA = [["2024-09-15 14:00:00",35.1201894,-117.89066178,35.12013453,-117.89064117,599.4,6.38,true,226.9,7.02,0.0,2],["2024-09-15 14:00:01",35.12021979,-117.89061836,35.12016642,-117.89052321,594.2,10.49,false,225.0,7.57,0.0,2],["2024-09-15 14:00:02",35.12025776,-117.89057597,35.12034934,-117.89048983,588.5,12.85,false,227.3,8.23,0.0,2],["2024-09-15 14:00:03",35.1202879,-117.89053569,35.12027557,-117.89064334,583.6,9.89,false,226.8,7.98,0.0,2],["2024-09-15 14:00:04",35.12032285,-117.8904967,35.12039051,-117.89051161,578.3,7.64,true,224.7,7.79,0.0,2],["2024-09-15 14:00:05",35.12035613,-117.89045318,35.12043384,-117.89040745,572.9,9.59,true,225.8,8.22,0.0,2],["2024-09-15 14:00:06",35.12039472,-117.89041397,35.12048071,-117.89048286,567.3,11.43,false,223.4,8.31,0.0,2],["2024-09-15 14:00:07",35.12042631,-117.89037229,35.12047143,-117.89029271,562.2,8.81,true,223.4,8.33,0.0,2],["2024-09-15 14:00:08",35.12045914,-117.89032989,35.12043039,-117.89033897,556.9,3.3,false,225.5,8.06,0.0,2],["2024-09-15 14:00:09",35.1204917,-117.89028814,35.12051195,-117.89020392,551.6,7.98,false,226.4,8.03,0.0,2],["2024-09-15 14:00:10",35.12052545,-117.89024753,35.12046473,-117.89023542,546.4,6.84,true,224.4,7.76,0.0,2],["2024-09-15 14:00:11",35.1205572,-117.89020825,35.12052755,-117.89030124,541.3,9.08,true,223.3,8.48,0.0,2],["2024-09-15 14:00:12",35.12058873,-117.89016728,35.12064296,-117.89013593,536.2,6.67,true,226.2,8.36,0.0,2],["2024-09-15 14:00:13",35.12062729,-117.89012622,35.12062932,-117.89003667,530.5,8.15,false,226.7,7.9,0.0,2],["2024-09-15 14:00:14",35.12065676,-117.8900867,35.12073208,-117.89014937,525.7,10.13,false,226.0,8.07,0.0,2],["2024-09-15 14:00:15",35.1206943,-117.89004419,35.12079489,-117.89005346,520.0,11.22,true,226.3,7.85,0.0,2],["2024-09-15 14:00:16",35.12072744,-117.89000357,35.12079936,-117.89002201,514.8,8.17,false,224.2,7.4,0.0,2],["2024-09-15 14:00:17",35.12076111,-117.8899621,35.12081659,-117.88991409,509.5,7.56,true,226.0,8.22,0.0,2],["2024-09-15 14:00:18",35.12079507,-117.88992026,35.1207292,-117.88995726,504.1,8.06,true,224.8,7.16,0.0,2],["2024-09-15 14:00:19",35.12082446,-117.88988162,35.12086005,-117.88990666,499.3,4.57,false,225.8,7.55,0.0,2],["2024-09-15 14:00:20",35.1208602,-117.88983529,35.12082972,-117.88985252,493.5,3.73,true,226.5,7.53,0.0,2],["2024-09-15 14:00:21",35.12089416,-117.88979869,35.12091387,-117.88972535,488.5,7.02,true,226.7,7.14,0.0,2],["2024-09-15 14:00:22",35.12092905,-117.88975523,35.12098545,-117.8898139,483.0,8.24,true,222.1,8.04,0.0,2],["2024-09-15 14:00:23",35.12096073,-117.88971415,35.12097609,-117.88977942,477.8,6.18,true,228.2,7.88,0.0,2],["2024-09-15 14:00:24",35.12099335,-117.88967316,35.12096418,-117.88961005,472.6,6.59,true,227.7,8.42,0.0,2],["2024-09-15 14:00:25",35.12102972,-117.8896295,35.12105377,-117.88971244,467.0,8.0,true,223.7,7.54,0.0,2],["2024-09-15 14:00:26",35.12106183,-117.88959409,35.12109703,-117.88952519,462.2,7.39,true,224.6,7.26,0.0,2],["2024-09-15 14:00:27",35.12109419,-117.88954962,35.12115016,-117.88950709,456.8,7.33,true,229.0,9.46,0.0,2],["2024-09-15 14:00:28",35.12113066,-117.88951114,35.12119412,-117.88947138,451.4,7.93,true,225.5,7.59,0.0,2],["2024-09-15 14:00:29",35.12116261,-117.88946929,35.12121464,-117.88952814,446.2,7.88,true,227.1,8.08,0.0,2],["2024-09-15 14:00:30",35.12119673,-117.88942905,35.12117645,-117.88940052,440.9,3.44,true,224.0,7.97,0.0,2],["2024-09-15 14:00:31",35.12123419,-117.88938563,35.12125412,-117.88930922,435.2,7.29,true,224.0,7.41,0.0,2],["2024-09-15 14:00:32",35.12126233,-117.88934625,35.12132009,-117.88941229,430.5,8.79,true,223.4,8.42,0.0,2],["2024-09-15 14:00:33",35.12129607,-117.88930184,35.12124307,-117.88931876,424.9,6.09,true,224.7,7.98,0.0,2],["2024-09-15 14:00:34",35.12133017,-117.88926172,35.12134966,-117.88917737,419.7,7.97,true,222.5,7.36,0.0,2],["2024-09-15 14:00:35",35.12136543,-117.88921836,35.12142511,-117.88923905,414.1,6.9,true,224.8,8.14,0.0,2],["2024-09-15 14:00:36",35.12140131,-117.88917999,35.12142661,-117.88924097,408.8,6.22,true,227.2,8.21,0.0,2],["2024-09-15 14:00:37",35.12143538,-117.88913897,35.12140644,-117.8891357,403.5,3.23,true,222.3,8.83,0.0,2],["2024-09-15 14:00:38",35.12146936,-117.88909861,35.12144184,-117.88911108,398.2,3.26,true,227.9,7.45,0.0,2],["2024-09-15 14:00:39",35.12149773,-117.88905587,35.12154242,-117.88901743,393.3,6.08,true,225.0,7.92,0.0,2],["2024-09-15 14:00:40",35.12153381,-117.88901325,35.12159168,-117.88902928,387.7,6.6,true,226.3,6.97,0.0,2],["2024-09-15 14:00:41",35.12156664,-117.88897666,35.12163526,-117.88899642,382.8,7.84,true,223.2,7.83,0.0,2],["2024-09-15 14:00:42",35.12160218,-117.88893654,35.12157466,-117.88895502,377.4,3.49,true,224.0,7.84,0.0,2],["2024-09-15 14:00:43",35.12163596,-117.88889172,35.12165004,-117.8888568,371.8,3.54,true,224.7,7.65,0.0,2],["2024-09-15 14:00:44",35.12166712,-117.88885122,35.12171729,-117.88881066,366.8,6.69,true,222.8,8.05,0.0,2],["2024-09-15 14:00:45",35.12170163,-117.88880558,35.12169827,-117.88876139,361.1,4.04,true,223.3,7.86,0.0,2],["2024-09-15 14:00:46",35.12173186,-117.8887707,35.12170466,-117.8887595,356.5,3.19,true,227.4,7.64,0.0,2],["2024-09-15 14:00:47",35.12176708,-117.88873273,35.1217429,-117.88874209,351.3,2.82,true,222.9,7.74,0.0,2],["2024-09-15 14:00:48",35.12180025,-117.88868753,35.12185092,-117.88869081,345.8,5.64,true,222.1,9.06,0.0,2],["2024-09-15 14:00:49",35.12183303,-117.88864844,35.12184404,-117.88869398,340.7,4.32,true,230.8,7.41,0.0,2],["2024-09-15 14:00:50",35.12186848,-117.88860448,35.1218914,-117.88858656,335.1,3.03,false,223.0,7.88,0.0,2],["2024-09-15 14:00:51",35.12190438,-117.8885632,35.12189779,-117.88852735,329.6,3.34,true,224.7,7.31,0.0,2],["2024-09-15 14:00:52",35.12193596,-117.88852351,35.12193466,-117.88849853,324.6,2.28,true,223.9,8.24,0.0,2],["2024-09-15 14:00:53",35.12197207,-117.88848158,35.12196581,-117.88850303,319.0,2.07,true,225.1,8.0,0.0,2],["2024-09-15 14:00:54",35.12200221,-117.88844016,35.12202128,-117.88847293,314.0,3.66,true,229.2,8.79,0.0,2],["2024-09-15 14:00:55",35.12203803,-117.88840123,35.12208259,-117.88842238,308.7,5.32,true,227.4,8.13,0.0,2],["2024-09-15 14:00:56",35.12207183,-117.8883621,35.12207072,-117.88837973,303.5,1.61,true,225.9,7.44,0.0,2],["2024-09-15 14:00:57",35.12209968,-117.8883242,35.12212133,-117.88832476,298.9,2.41,true,48.4,0.26,0.0,2],["2024-09-15 14:00:58",35.12209736,-117.88833933,35.12212953,-117.88832858,300.0,3.71,false,230.2,0.34,0.0,2],["2024-09-15 14:00:59",35.12209267,-117.88832453,35.12211743,-117.88830651,299.5,3.2,true,132.3,0.43,0.0,2],["2024-09-15 14:01:00",35.12209734,-117.88832918,35.12209737,-117.88834354,299.4,1.31,true,341.6,0.39,0.0,2],["2024-09-15 14:01:01",35.12208142,-117.88834871,35.12211591,-117.88836414,301.9,4.08,false,234.9,0.42,0.0,2],["2024-09-15 14:01:02",35.12209742,-117.88832849,35.12210749,-117.88833392,299.3,1.22,true,72.9,0.42,0.0,2],["2024-09-15 14:01:03",35.12209972,-117.88832538,35.12210016,-117.88834518,299.0,1.8,true,30.4,0.06,0.0,2],["2024-09-15 14:01:04",35.12209152,-117.88833063,35.12208735,-117.88832747,299.9,0.54,true,281.7,0.2,0.0,2],["2024-09-15 14:01:05",35.12210415,-117.88832169,35.12210009,-117.88829432,298.4,2.53,true,221.8,0.2,0.0,2],["2024-09-15 14:01:06",35.12208521,-117.88835018,35.12208459,-117.88837914,301.7,2.63,true,275.0,0.36,0.0,2],["2024-09-15 14:01:07",35.12207281,-117.88835045,35.12209758,-117.88834607,302.7,2.78,true,42.2,0.52,0.0,2],["2024-09-15 14:01:08",35.12209342,-117.88833586,35.12210775,-117.88833932,300.1,1.62,true,120.1,0.33,0.0,2],["2024-09-15 14:01:09",35.12209297,-117.88833517,35.12209889,-117.88834454,300.1,1.08,true,56.7,0.36,0.0,2],["2024-09-15 14:01:10",35.12208169,-117.88834187,35.12211936,-117.88835309,301.4,4.31,true,199.1,0.18,0.0,2],["2024-09-15 14:01:11",35.122095,-117.88833217,35.12210315,-117.88837642,299.8,4.12,true,258.4,0.43,0.0,2],["2024-09-15 14:01:12",35.1220961,-117.88833692,35.12208567,-117.88834753,300.0,1.51,true,211.8,0.23,0.0,2],["2024-09-15 14:01:13",35.12209729,-117.88833591,35.12208472,-117.88833752,299.8,1.41,true,165.1,0.18,0.0,2],["2024-09-15 14:01:14",35.12209178,-117.88833414,35.12208816,-117.88832436,300.1,0.98,true,358.9,0.31,0.0,2],["2024-09-15 14:01:15",35.12210027,-117.88832225,35.12210454,-117.88831024,298.7,1.19,true,32.6,0.33,0.0,2],["2024-09-15 14:01:16",35.12208723,-117.88833656,35.1220904,-117.88833287,300.7,0.49,true,71.4,0.24,0.0,2],["2024-09-15 14:01:17",35.12208863,-117.88833628,35.12211974,-117.88832015,300.5,3.76,true,218.1,0.11,0.0,2],["2024-09-15 14:01:18",35.12210152,-117.88831462,35.12209959,-117.88833746,298.1,2.09,true,334.0,0.33,0.0,2],["2024-09-15 14:01:19",35.122088,-117.88834275,35.1221282,-117.88833826,301.0,4.49,true,226.8,0.17,0.0,2],["2024-09-15 14:01:20",35.12209562,-117.88832559,35.12211191,-117.88830563,299.3,2.56,true,255.6,0.56,0.0,2],["2024-09-15 14:01:21",35.12210874,-117.88831687,35.12213035,-117.88833293,297.7,2.81,true,318.3,0.03,0.0,2],["2024-09-15 14:01:22",35.12208373,-117.88834227,35.12208858,-117.88835521,301.3,1.29,true,165.1,0.36,0.0,2],["2024-09-15 14:01:23",35.12209718,-117.88832656,35.12210594,-117.88831137,299.2,1.69,true,108.5,0.08,0.0,2],["2024-09-15 14:01:24",35.12208323,-117.88833894,35.12209013,-117.8883164,301.1,2.19,true,183.0,0.35,0.0,2],["2024-09-15 14:01:25",35.12208204,-117.88835237,35.12210548,-117.88836207,302.1,2.75,true,109.7,0.17,0.0,2],["2024-09-15 14:01:26",35.12209114,-117.88833279,35.12208895,-117.88833709,300.1,0.46,true,78.3,0.0,0.0,2],["2024-09-15 14:01:27",35.12210366,-117.88831771,35.12211864,-117.88831931,298.2,1.67,true,81.2,0.16,0.0,2],["2024-09-15 14:01:28",35.12208986,-117.88833475,35.12210051,-117.88832927,300.3,1.29,true,113.8,0.25,0.0,2],["2024-09-15 14:01:29",35.12208083,-117.88834223,35.1220826,-117.88831878,301.5,2.14,true,184.6,0.51,0.0,2],["2024-09-15 14:01:30",35.12209526,-117.88833109,35.12208098,-117.88830874,299.7,2.58,true,288.0,0.36,0.0,2],["2024-09-15 14:01:31",35.1221045,-117.88831668,35.12212359,-117.88831516,298.0,2.13,true,101.0,0.37,0.0,2],["2024-09-15 14:01:32",35.12210014,-117.88833175,35.12212458,-117.88834847,299.3,3.11,true,297.8,0.08,0.0,2],["2024-09-15 14:01:33",35.12208408,-117.8883479,35.12207521,-117.88833903,301.6,1.27,true,131.4,0.22,0.0,2],["2024-09-15 14:01:34",35.12207264,-117.88835973,35.12210251,-117.88838993,303.3,4.31,true,253.9,0.26,0.0,2],["2024-09-15 14:01:35",35.12209319,-117.88832864,35.12209925,-117.88833029,299.7,0.69,true,59.0,0.2,0.0,2],["2024-09-15 14:01:36",35.12209073,-117.88834322,35.12208775,-117.8883617,300.8,1.71,true,356.5,0.27,0.0,2],["2024-09-15 14:01:37",35.12207969,-117.88834184,35.12209103,-117.88832611,301.6,1.91,true,156.2,0.53,0.0,2],["2024-09-15 14:01:38",35.12802952,-117.88561889,35.12806542,-117.88562971,449.4,4.11,true,95.8,5.37,0.0,2],["2024-09-15 14:01:39",35.12798226,-117.88514285,35.12801363,-117.88514496,449.6,3.49,true,92.8,5.69,0.0,2],["2024-09-15 14:01:40",35.12789096,-117.88467625,35.1279107,-117.88468856,449.1,2.46,false,105.0,5.9,0.0,2],["2024-09-15 14:01:41",35.12777077,-117.88421946,35.12775804,-117.88421474,449.5,1.48,true,113.2,6.27,0.0,2],["2024-09-15 14:01:42",35.12761319,-117.88378076,35.12763276,-117.88376641,449.6,2.54,true,122.8,5.97,0.0,2],["2024-09-15 14:01:43",35.1274192,-117.88336622,35.12742984,-117.88332649,449.4,3.8,true,118.5,5.64,0.0,2],["2024-09-15 14:01:44",35.12719494,-117.88297164,35.12718402,-117.88299346,449.5,2.33,true,125.5,6.36,0.0,2],["2024-09-15 14:01:45",35.12694181,-117.88260867,35.12696709,-117.88256896,449.6,4.58,true,135.0,6.08,0.0,2],["2024-09-15 14:01:46",35.12665507,-117.88227638,35.12669238,-117.88230351,449.3,4.83,true,136.2,6.08,0.0,2],["2024-09-15 14:01:47",35.12634771,-117.88197646,35.12639472,-117.88197483,449.5,5.23,true,143.7,6.15,0.0,2],["2024-09-15 14:01:48",35.12601638,-117.8817221,35.12604186,-117.8817486,449.0,3.72,true,146.8,6.29,0.0,2],["2024-09-15 14:01:49",35.12567678,-117.88150301,35.12573629,-117.88144417,449.5,8.51,true,156.3,6.64,0.0,2],["2024-09-15 14:01:50",35.12530622,-117.8813233,35.12535382,-117.88129201,449.4,6.01,true,156.2,5.49,0.0,2],["2024-09-15 14:01:51",35.12493139,-117.8811919,35.12499157,-117.88119234,449.4,6.69,true,167.4,5.29,0.0,2],["2024-09-15 14:01:52",35.12454809,-117.88110426,35.1245851,-117.88107202,449.4,5.05,true,170.3,5.75,0.0,2],["2024-09-15 14:01:53",35.12415783,-117.88105983,35.12412844,-117.88111498,449.6,5.99,true,172.7,6.22,0.0,2],["2024-09-15 14:01:54",35.12376289,-117.88106553,35.12382239,-117.88107155,449.6,6.64,true,184.7,5.68,0.0,2],["2024-09-15 14:01:55",35.12337281,-117.88111557,35.1234266,-117.88106523,449.7,7.53,true,187.0,6.58,0.0,2],["2024-09-15 14:01:56",35.12299078,-117.8812138,35.12300209,-117.88114322,449.5,6.54,true,192.6,6.19,0.0,2],["2024-09-15 14:01:57",35.12261635,-117.88135652,35.12260702,-117.88141349,449.5,5.28,true,196.9,5.03,0.0,2],["2024-09-15 14:01:58",35.12225939,-117.88153606,35.12229443,-117.88157076,449.8,5.01,true,199.7,5.88,0.0,2],["2024-09-15 14:01:59",35.12191072,-117.88176889,35.12187113,-117.88173164,449.5,5.56,true,212.8,6.21,0.0,2],["2024-09-15 14:02:00",35.12158306,-117.88203422,35.12155384,-117.8820345,449.8,3.25,true,217.2,5.87,0.0,2],["2024-09-15 14:02:01",35.12128319,-117.88233873,35.12126208,-117.88240841,449.6,6.76,true,222.7,5.84,0.0,2],["2024-09-15 14:02:02",35.12101012,-117.88267904,35.12107706,-117.88267926,449.2,7.44,true,224.5,6.23,0.0,2],["2024-09-15 14:02:03",35.12075814,-117.88305036,35.12082502,-117.88301033,449.3,8.28,true,237.0,5.87,0.0,2],["2024-09-15 14:02:04",35.12053565,-117.88344632,35.12062048,-117.88345823,449.8,9.5,false,237.9,5.97,0.0,2],["2024-09-15 14:02:05",35.12034967,-117.88387117,35.12029276,-117.88384813,449.7,6.67,false,242.9,4.97,0.0,2],["2024-09-15 14:02:06",35.12020296,-117.88430907,35.12028693,-117.8842824,449.3,9.65,true,246.0,6.33,0.0,2],["2024-09-15 14:02:07",35.12008608,-117.88476241,35.12006425,-117.88469691,449.5,6.43,true,256.7,5.93,0.0,2],["2024-09-15 14:02:08",35.12000778,-117.88523506,35.12006104,-117.88530927,449.3,8.98,true,259.5,5.83,0.0,2],["2024-09-15 14:02:09",35.11996348,-117.88571105,35.11994145,-117.8856822,449.6,3.59,true,265.3,5.83,0.0,2],["2024-09-15 14:02:10",35.11996127,-117.88619213,35.11997957,-117.88627956,449.4,8.21,true,265.5,5.67,0.0,2],["2024-09-15 14:02:11",35.11999322,-117.8866735,35.11995813,-117.88666987,449.7,3.92,true,275.0,5.92,0.0,2],["2024-09-15 14:02:12",35.12006879,-117.88714028,35.12012052,-117.88708914,449.3,7.4,true,283.2,6.42,0.0,2],["2024-09-15 14:02:13",35.12017334,-117.88760183,35.12023928,-117.88756212,449.8,8.17,true,288.2,6.26,0.0,2],["2024-09-15 14:02:14",35.12031992,-117.8880438,35.12029051,-117.88805653,449.4,3.47,true,294.4,5.92,0.0,2],["2024-09-15 14:02:15",35.12049675,-117.88847431,35.12055257,-117.88845874,449.9,6.37,false,298.9,5.59,0.0,2],["2024-09-15 14:02:16",35.1207111,-117.88887169,35.12068083,-117.8888463,449.4,4.08,true,301.1,5.63,0.0,2],["2024-09-15 14:02:17",35.12095723,-117.88924914,35.12102303,-117.88923637,449.2,7.41,true,307.7,5.55,0.0,2],["2024-09-15 14:02:18",35.12122683,-117.88959483,35.12126582,-117.88964463,449.4,6.27,true,316.1,6.11,0.0,2],["2024-09-15 14:02:19",35.12152394,-117.88990485,35.12157153,-117.8898584,449.4,6.77,true,317.4,5.1,0.0,2],["2024-09-15 14:02:20",35.12184658,-117.89017879,35.12187272,-117.89019689,449.2,3.34,true,322.2,6.04,0.0,2],["2024-09-15 14:02:21",35.12218764,-117.89041306,35.12222369,-117.89045842,449.1,5.75,true,332.2,5.64,0.0,2],["2024-09-15 14:02:22",35.12254404,-117.89061125,35.12251425,-117.89056482,449.5,5.37,true,345.0,6.71,0.0,2],["2024-09-15 14:02:23",35.12291821,-117.89076317,35.12293425,-117.89068998,449.6,6.89,true,346.4,6.18,0.0,2],["2024-09-15 14:02:24",35.12330054,-117.890866,35.12327979,-117.89086728,449.3,2.31,true,351.9,6.14,0.0,2],["2024-09-15 14:02:25",35.12368318,-117.89092733,35.12366379,-117.89091679,449.5,2.36,true,351.7,6.67,0.0,2],["2024-09-15 14:02:26",35.12408185,-117.89093871,35.12410153,-117.89093332,449.3,2.24,true,5.2,6.0,0.0,2],["2024-09-15 14:02:27",35.1244697,-117.89091113,35.1244888,-117.89094392,449.7,3.66,true,6.8,5.48,0.0,2],["2024-09-15 14:02:28",35.12485569,-117.8908305,35.12491151,-117.89080338,449.5,6.68,true,14.9,6.0,0.0,2],["2024-09-15 14:02:29",35.12523475,-117.89070626,35.12526588,-117.8906766,449.5,4.39,true,14.5,5.94,0.0,2],["2024-09-15 14:02:30",35.12559962,-117.89054066,35.12558149,-117.89050715,449.6,3.65,true,24.5,5.29,0.0,2],["2024-09-15 14:02:31",35.12595269,-117.89032533,35.12599982,-117.89028496,449.3,6.4,true,32.0,6.02,0.0,2],["2024-09-15 14:02:32",35.12628472,-117.89007801,35.12628443,-117.8900702,449.5,0.71,true,35.6,6.51,0.0,2],["2024-09-15 14:02:33",35.1266006,-117.88978633,35.12664043,-117.88981195,449.7,5.0,true,39.0,6.09,0.0,2],["2024-09-15 14:02:34",35.12688559,-117.88946188,35.12693877,-117.88950502,449.5,7.1,true,44.0,5.75,0.0,2],["2024-09-15 14:02:35",35.12714709,-117.88910368,35.12716689,-117.88909735,449.6,2.28,true,51.9,5.54,0.0,2],["2024-09-15 14:02:36",35.12737641,-117.888713,35.12739011,-117.88868796,449.3,2.74,true,50.3,5.26,0.0,2],["2024-09-15 14:02:37",35.12757662,-117.88830329,35.12759135,-117.88830552,449.5,1.65,true,65.9,4.93,0.0,2],["2024-09-15 14:02:38",35.12774294,-117.88786608,35.12776781,-117.8878798,449.5,3.03,true,66.6,5.7,0.0,2],["2024-09-15 14:02:39",35.12787079,-117.88741814,35.12794146,-117.88740745,449.3,7.92,true,78.8,5.87,0.0,2],["2024-09-15 14:02:40",35.12797044,-117.88695238,35.12797295,-117.88696721,449.9,1.38,true,78.6,6.05,0.0,2],["2024-09-15 14:02:41",35.12802414,-117.88647212,35.12804269,-117.88646664,449.5,2.12,true,82.3,6.39,0.0,2]];
+
+// ── Coordinate system ───────────────────────────────────────
+const SENSOR_LAT = 35.12400, SENSOR_LON = -117.88600;
+const LAT_M = 111320;
+const LON_M = 111320 * Math.cos(SENSOR_LAT * Math.PI / 180);
+
+function latLonToMeters(lat, lon) {
+  return { x: (lon - SENSOR_LON) * LON_M, y: (lat - SENSOR_LAT) * LAT_M };
+}
+
+// ── Canvas setup ────────────────────────────────────────────
+const canvas  = document.getElementById('playback-canvas');
+const ctx     = canvas.getContext('2d');
+let W, H, scale, ox, oy;
+
+function setupCanvas() {
+  const dpr = window.devicePixelRatio || 1;
+  const rect = canvas.parentElement.getBoundingClientRect();
+  W = (rect.width || 700);
+  H = parseInt(canvas.getAttribute('height'));
+  canvas.width  = W * dpr;
+  canvas.height = H * dpr;
+  canvas.style.width  = W + 'px';
+  canvas.style.height = H + 'px';
+  ctx.scale(dpr, dpr);
+
+  // Compute scale: fit all data with padding
+  const pad = 60;
+  const allM = FLIGHT_DATA.map(r => latLonToMeters(r[1], r[2]));
+  const xs = allM.map(p => p.x), ys = allM.map(p => p.y);
+  const minX = Math.min(...xs), maxX = Math.max(...xs);
+  const minY = Math.min(...ys), maxY = Math.max(...ys);
+  const rangeX = maxX - minX, rangeY = maxY - minY;
+  scale = Math.min((W - pad * 2) / rangeX, (H - pad * 2) / rangeY) * 0.85;
+
+  // Origin = sensor at center-ish (bias toward data centroid)
+  const cx = (minX + maxX) / 2, cy = (minY + maxY) / 2;
+  ox = W / 2 - cx * scale;
+  oy = H / 2 + cy * scale; // y flipped (north = up)
+}
+
+function mToCanvas(mx, my) {
+  return { x: ox + mx * scale, y: oy - my * scale };
+}
+
+// ── Playback state ──────────────────────────────────────────
+let frameIdx   = 0;
+let playing    = false;
+let speed      = 1;
+let lastTime   = null;
+let accumMs    = 0;
+const MS_PER_FRAME = 1000; // 1 second per record at 1×
+const TRAIL_LEN    = 30;
+
+// ── Draw ────────────────────────────────────────────────────
+function drawFrame(idx) {
+  ctx.clearRect(0, 0, W, H);
+
+  // Background
+  ctx.fillStyle = '#0e0e0e';
+  ctx.fillRect(0, 0, W, H);
+
+  // Grid
+  ctx.strokeStyle = 'rgba(255,255,255,0.04)';
+  ctx.lineWidth = 0.5;
+  for (let gx = 0; gx < W; gx += 40) { ctx.beginPath(); ctx.moveTo(gx, 0); ctx.lineTo(gx, H); ctx.stroke(); }
+  for (let gy = 0; gy < H; gy += 40) { ctx.beginPath(); ctx.moveTo(0, gy); ctx.lineTo(W, gy); ctx.stroke(); }
+
+  // Sensor origin
+  const sOrig = mToCanvas(0, 0);
+
+  // Range rings: 100, 200, 300, 400, 500, 600m from sensor
+  [100, 200, 300, 400, 500, 600].forEach((r, i) => {
+    const rPx = r * scale;
+    ctx.beginPath();
+    ctx.arc(sOrig.x, sOrig.y, rPx, 0, Math.PI * 2);
+    ctx.strokeStyle = i % 2 === 0 ? 'rgba(242,97,21,0.08)' : 'rgba(255,255,255,0.04)';
+    ctx.lineWidth = 0.8;
+    ctx.setLineDash([3, 6]);
+    ctx.stroke();
+    ctx.setLineDash([]);
+    // Labels
+    ctx.fillStyle = 'rgba(255,255,255,0.18)';
+    ctx.font = '9px "Share Tech Mono", monospace';
+    ctx.fillText(`${r}m`, sOrig.x + rPx + 3, sOrig.y - 3);
+  });
+
+  // North arrow
+  ctx.save();
+  ctx.translate(W - 36, 36);
+  ctx.strokeStyle = 'rgba(255,255,255,0.3)';
+  ctx.lineWidth = 1;
+  ctx.beginPath(); ctx.moveTo(0, 12); ctx.lineTo(0, -12); ctx.stroke();
+  ctx.beginPath(); ctx.moveTo(0, -12); ctx.lineTo(-5, -4); ctx.stroke();
+  ctx.beginPath(); ctx.moveTo(0, -12); ctx.lineTo(5, -4); ctx.stroke();
+  ctx.fillStyle = 'rgba(255,255,255,0.3)';
+  ctx.font = '9px "Share Tech Mono", monospace';
+  ctx.textAlign = 'center';
+  ctx.fillText('N', 0, -16);
+  ctx.restore();
+  ctx.textAlign = 'left';
+
+  // Sensor origin marker
+  ctx.beginPath(); ctx.arc(sOrig.x, sOrig.y, 6, 0, Math.PI * 2);
+  ctx.fillStyle = 'rgba(242,97,21,0.2)'; ctx.fill();
+  ctx.strokeStyle = 'rgba(242,97,21,0.6)'; ctx.lineWidth = 1.5; ctx.stroke();
+  ctx.fillStyle = 'rgba(242,97,21,0.7)';
+  ctx.font = '9px "Share Tech Mono", monospace';
+  ctx.fillText('SENSOR', sOrig.x + 10, sOrig.y + 4);
+
+  // Full truth track (faint ghost)
+  ctx.beginPath();
+  FLIGHT_DATA.forEach((r, i) => {
+    const p = latLonToMeters(r[1], r[2]);
+    const cp = mToCanvas(p.x, p.y);
+    i === 0 ? ctx.moveTo(cp.x, cp.y) : ctx.lineTo(cp.x, cp.y);
+  });
+  ctx.strokeStyle = 'rgba(242,97,21,0.08)';
+  ctx.lineWidth = 1; ctx.stroke();
+
+  // Truth trail (last N frames)
+  const trailStart = Math.max(0, idx - TRAIL_LEN);
+  ctx.beginPath();
+  for (let i = trailStart; i <= idx; i++) {
+    const r = FLIGHT_DATA[i];
+    const p = latLonToMeters(r[1], r[2]);
+    const cp = mToCanvas(p.x, p.y);
+    const alpha = 0.15 + 0.85 * ((i - trailStart) / Math.max(1, idx - trailStart));
+    if (i === trailStart) {
+      ctx.stroke(); ctx.beginPath();
+      ctx.strokeStyle = `rgba(242,97,21,${alpha})`;
+      ctx.lineWidth = 1.5;
+      ctx.moveTo(cp.x, cp.y);
+    } else {
+      ctx.strokeStyle = `rgba(242,97,21,${alpha})`;
+      ctx.lineTo(cp.x, cp.y);
+    }
+  }
+  ctx.stroke();
+
+  // Sensor trail (blue)
+  ctx.beginPath();
+  for (let i = trailStart; i <= idx; i++) {
+    const r = FLIGHT_DATA[i];
+    const p = latLonToMeters(r[3], r[4]);
+    const cp = mToCanvas(p.x, p.y);
+    const alpha = 0.1 + 0.5 * ((i - trailStart) / Math.max(1, idx - trailStart));
+    if (i === trailStart) {
+      ctx.stroke(); ctx.beginPath();
+      ctx.strokeStyle = `rgba(74,158,255,${alpha})`;
+      ctx.lineWidth = 1;
+      ctx.moveTo(cp.x, cp.y);
+    } else {
+      ctx.strokeStyle = `rgba(74,158,255,${alpha})`;
+      ctx.lineTo(cp.x, cp.y);
+    }
+  }
+  ctx.stroke();
+
+  // Current positions
+  const cur = FLIGHT_DATA[idx];
+
+  // Sensor-reported dot (blue)
+  const sPos = latLonToMeters(cur[3], cur[4]);
+  const sCp  = mToCanvas(sPos.x, sPos.y);
+  ctx.beginPath(); ctx.arc(sCp.x, sCp.y, 5, 0, Math.PI * 2);
+  ctx.fillStyle = '#4a9eff'; ctx.fill();
+
+  // Error line (truth → sensor)
+  const tPos = latLonToMeters(cur[1], cur[2]);
+  const tCp  = mToCanvas(tPos.x, tPos.y);
+  ctx.beginPath(); ctx.moveTo(tCp.x, tCp.y); ctx.lineTo(sCp.x, sCp.y);
+  ctx.strokeStyle = 'rgba(255,255,255,0.15)'; ctx.lineWidth = 1;
+  ctx.setLineDash([3, 4]); ctx.stroke(); ctx.setLineDash([]);
+
+  // Truth dot (orange) — drone icon
+  const det = cur[7];
+  ctx.beginPath(); ctx.arc(tCp.x, tCp.y, 7, 0, Math.PI * 2);
+  ctx.fillStyle = det ? 'rgba(242,97,21,0.25)' : 'rgba(255,255,255,0.08)'; ctx.fill();
+  ctx.beginPath(); ctx.arc(tCp.x, tCp.y, 5, 0, Math.PI * 2);
+  ctx.fillStyle = det ? '#f26115' : '#888'; ctx.fill();
+
+  // Detection pulse ring
+  if (det) {
+    const pulse = (Date.now() % 1200) / 1200;
+    ctx.beginPath(); ctx.arc(tCp.x, tCp.y, 7 + pulse * 14, 0, Math.PI * 2);
+    ctx.strokeStyle = `rgba(242,97,21,${0.5 * (1 - pulse)})`; ctx.lineWidth = 1.5; ctx.stroke();
+  }
+
+  // Heading indicator
+  const hdgRad = (cur[8] - 90) * Math.PI / 180;
+  ctx.beginPath();
+  ctx.moveTo(tCp.x, tCp.y);
+  ctx.lineTo(tCp.x + Math.cos(hdgRad) * 18, tCp.y + Math.sin(hdgRad) * 18);
+  ctx.strokeStyle = 'rgba(242,97,21,0.6)'; ctx.lineWidth = 1.5; ctx.stroke();
+
+  // Range line from sensor to truth
+  ctx.beginPath(); ctx.moveTo(sOrig.x, sOrig.y); ctx.lineTo(tCp.x, tCp.y);
+  ctx.strokeStyle = 'rgba(242,97,21,0.06)'; ctx.lineWidth = 0.8; ctx.stroke();
+}
+
+// ── HUD update ───────────────────────────────────────────────
+function updateHUD(idx) {
+  const r = FLIGHT_DATA[idx];
+  document.getElementById('hud-ts').textContent    = r[0].replace('2024-09-15 ', '');
+  document.getElementById('hud-range').textContent = r[5].toFixed(1) + ' m';
+  document.getElementById('hud-err').textContent   = r[6].toFixed(2) + ' m';
+  const detEl = document.getElementById('hud-det');
+  detEl.textContent  = r[7] ? 'DETECTED' : 'NO DETECT';
+  detEl.className    = 'hud-val ' + (r[7] ? 'hud-det-true green' : 'hud-det-false dim');
+  document.getElementById('hud-hdg').textContent   = r[8].toFixed(1) + '°';
+  document.getElementById('hud-spd').textContent   = r[9].toFixed(2) + ' m/s';
+  document.getElementById('hud-rf').textContent    = r[10].toFixed(2) + '%';
+  document.getElementById('hud-tier').textContent  = 'Tier ' + r[11];
+
+  const phase = idx < 57 ? 'Approach' : idx < 100 ? 'Hover' : 'Orbit';
+  document.getElementById('hud-phase').textContent = phase;
+
+  // Scrubber + time
+  document.getElementById('scrubber').value = idx;
+  const secs = idx;
+  const mm = String(Math.floor(secs / 60)).padStart(2, '0');
+  const ss = String(secs % 60).padStart(2, '0');
+  document.getElementById('ctrl-time').textContent = `${mm}:${ss} / 02:42`;
+  document.getElementById('prog-fill').style.width = (idx / 161 * 100) + '%';
+}
+
+// ── Animation loop ───────────────────────────────────────────
+function loop(ts) {
+  if (playing) {
+    if (lastTime !== null) {
+      accumMs += (ts - lastTime) * speed;
+      if (accumMs >= MS_PER_FRAME) {
+        const steps = Math.floor(accumMs / MS_PER_FRAME);
+        accumMs -= steps * MS_PER_FRAME;
+        frameIdx = Math.min(frameIdx + steps, 161);
+        if (frameIdx >= 161) { playing = false; setPlayIcon(false); }
+      }
+    }
+    lastTime = ts;
+  } else {
+    lastTime = null;
+  }
+  drawFrame(frameIdx);
+  updateHUD(frameIdx);
+  requestAnimationFrame(loop);
+}
+
+// ── Controls ─────────────────────────────────────────────────
+function setPlayIcon(isPlaying) {
+  document.getElementById('play-icon').innerHTML = isPlaying
+    ? '<rect x="4" y="2" width="3" height="12"/><rect x="9" y="2" width="3" height="12"/>'
+    : '<polygon points="4,2 13,8 4,14"/>';
+}
+
+document.getElementById('btn-play').addEventListener('click', () => {
+  if (frameIdx >= 161) { frameIdx = 0; accumMs = 0; }
+  playing = !playing;
+  setPlayIcon(playing);
+});
+
+document.getElementById('btn-reset').addEventListener('click', () => {
+  playing = false; setPlayIcon(false);
+  frameIdx = 0; accumMs = 0; lastTime = null;
+  drawFrame(0); updateHUD(0);
+});
+
+document.querySelectorAll('.speed-btn').forEach(btn => {
+  btn.addEventListener('click', () => {
+    speed = parseInt(btn.dataset.speed);
+    document.querySelectorAll('.speed-btn').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    accumMs = 0;
+  });
+});
+
+document.getElementById('scrubber').addEventListener('input', e => {
+  frameIdx = parseInt(e.target.value);
+  accumMs = 0;
+  drawFrame(frameIdx); updateHUD(frameIdx);
+});
+
+// ── Init ────────────────────────────────────────────────────
+setupCanvas();
+drawFrame(0);
+updateHUD(0);
+window.addEventListener('resize', () => { setupCanvas(); drawFrame(frameIdx); });
+requestAnimationFrame(loop);</script>
+
+  <script>
   const observer = new IntersectionObserver((entries) => {
     entries.forEach(e => { if (e.isIntersecting) { e.target.classList.add('visible'); observer.unobserve(e.target); } });
   }, { threshold: 0.06 });
