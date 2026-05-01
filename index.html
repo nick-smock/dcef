@@ -1,0 +1,869 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>DCEF — Distributed C-UAS Evaluation Framework</title>
+  <meta name="description" content="A standardized methodology for federated counter-UAS test and evaluation across the United States.">
+  <meta property="og:title" content="DCEF — Distributed C-UAS Evaluation Framework">
+  <meta property="og:description" content="We test counter-drone systems everywhere and can't compare any of it. DCEF fixes that.">
+  <meta property="og:url" content="https://nick-smock.github.io/dcef">
+  <meta property="og:type" content="website">
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><rect width='32' height='32' rx='4' fill='%23090E18'/><text y='25' x='2' font-size='24' font-weight='900' fill='%231D9E75' font-family='Arial Black'>D</text></svg>">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Big+Shoulders+Display:wght@700;900&family=Barlow+Condensed:wght@300;400;500;600;700&family=Spectral:ital,wght@0,400;0,600;1,400&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css"/>
+
+  <style>
+    /* ─── RESET ─── */
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    html { scroll-behavior: smooth; }
+    body { font-family: 'Spectral', Georgia, serif; background: #090E18; color: #F5F3EE; line-height: 1.6; }
+    a { text-decoration: none; }
+    img { max-width: 100%; }
+
+    /* ─── VARIABLES ─── */
+    :root {
+      --dark:     #090E18;
+      --dark-2:   #111827;
+      --teal:     #1D9E75;
+      --teal-l:   #2AC28F;
+      --red:      #E24B4A;
+      --gold:     #C4942A;
+      --white:    #F5F3EE;
+      --muted:    rgba(245,243,238,0.5);
+      --border:   rgba(29,158,117,0.2);
+      --grid:     rgba(29,158,117,0.04);
+    }
+
+    /* ─── NAV ─── */
+    #nav {
+      position: fixed; top: 0; left: 0; right: 0; z-index: 1000;
+      height: 56px; display: flex; align-items: center;
+      padding: 0 2rem; gap: 1rem;
+      background: rgba(9,14,24,0.93);
+      backdrop-filter: blur(16px);
+      border-bottom: 1px solid var(--border);
+    }
+    .nav-brand {
+      font-family: 'Big Shoulders Display', sans-serif;
+      font-weight: 900; font-size: 1.3rem;
+      color: var(--teal); letter-spacing: 0.06em;
+    }
+    .nav-links {
+      display: flex; gap: 1.75rem; margin-left: auto; align-items: center;
+    }
+    .nav-link {
+      font-family: 'Barlow Condensed', sans-serif;
+      font-size: 0.78rem; font-weight: 500;
+      letter-spacing: 0.12em; text-transform: uppercase;
+      color: var(--muted); transition: color 0.2s;
+    }
+    .nav-link:hover { color: var(--teal); }
+    .nav-gh {
+      padding: 0.3rem 0.9rem;
+      border: 1px solid var(--border);
+      border-radius: 4px;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.7rem; letter-spacing: 0.08em;
+      color: var(--teal); transition: all 0.2s;
+    }
+    .nav-gh:hover { background: rgba(29,158,117,0.1); border-color: var(--teal); }
+
+    /* ─── HERO ─── */
+    #hero {
+      min-height: 100vh; display: flex; align-items: center;
+      background-color: var(--dark);
+      background-image:
+        linear-gradient(var(--grid) 1px, transparent 1px),
+        linear-gradient(90deg, var(--grid) 1px, transparent 1px);
+      background-size: 44px 44px;
+      position: relative; overflow: hidden; padding-top: 56px;
+    }
+    .scan {
+      position: absolute; left: 0; right: 0; height: 1px; top: 0;
+      background: linear-gradient(90deg, transparent, rgba(29,158,117,0.45), transparent);
+      animation: scanDown 14s linear infinite; pointer-events: none;
+    }
+    @keyframes scanDown { from { top: 0; } to { top: 100%; } }
+
+    .hero-wrap {
+      max-width: 960px; margin: 0 auto; padding: 5rem 2rem 6rem;
+      position: relative; z-index: 1;
+    }
+    .hero-eyebrow {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.68rem; letter-spacing: 0.22em; color: var(--teal);
+      text-transform: uppercase; margin-bottom: 1.5rem;
+      opacity: 0; animation: fadeUp 0.7s 0.1s forwards;
+    }
+    .hero-title {
+      font-family: 'Big Shoulders Display', sans-serif;
+      font-weight: 900; line-height: 0.88; letter-spacing: -0.02em;
+      font-size: clamp(5rem, 14vw, 10rem);
+      color: var(--white); margin-bottom: 0.6rem;
+      opacity: 0; animation: fadeUp 0.7s 0.2s forwards;
+    }
+    .hero-full {
+      font-family: 'Barlow Condensed', sans-serif;
+      font-weight: 400; font-size: clamp(1.1rem, 2.8vw, 1.6rem);
+      color: rgba(245,243,238,0.65); letter-spacing: 0.03em;
+      margin-bottom: 2rem;
+      opacity: 0; animation: fadeUp 0.7s 0.3s forwards;
+    }
+    .hero-quote {
+      border-left: 2px solid var(--teal); padding-left: 1.25rem;
+      font-style: italic; font-size: clamp(1rem, 2vw, 1.2rem);
+      color: rgba(245,243,238,0.55); margin-bottom: 2.5rem;
+      max-width: 620px;
+      opacity: 0; animation: fadeUp 0.7s 0.4s forwards;
+    }
+    .hero-meta {
+      margin-bottom: 2.5rem;
+      opacity: 0; animation: fadeUp 0.7s 0.5s forwards;
+    }
+    .hero-authors {
+      font-family: 'JetBrains Mono', monospace; font-size: 0.88rem;
+      color: var(--white); letter-spacing: 0.05em; margin-bottom: 0.3rem;
+    }
+    .hero-inst {
+      font-family: 'JetBrains Mono', monospace; font-size: 0.68rem;
+      color: rgba(245,243,238,0.35); letter-spacing: 0.1em; text-transform: uppercase;
+    }
+    .hero-cta {
+      display: flex; gap: 1rem; flex-wrap: wrap;
+      opacity: 0; animation: fadeUp 0.7s 0.6s forwards;
+    }
+    .btn-p {
+      padding: 0.72rem 1.8rem; background: var(--teal);
+      color: var(--dark); font-family: 'Barlow Condensed', sans-serif;
+      font-weight: 700; font-size: 0.85rem; letter-spacing: 0.1em;
+      text-transform: uppercase; border-radius: 4px; transition: background 0.2s;
+    }
+    .btn-p:hover { background: var(--teal-l); }
+    .btn-s {
+      padding: 0.72rem 1.8rem;
+      border: 1px solid rgba(29,158,117,0.45); color: var(--teal);
+      font-family: 'Barlow Condensed', sans-serif; font-weight: 700;
+      font-size: 0.85rem; letter-spacing: 0.1em; text-transform: uppercase;
+      border-radius: 4px; transition: all 0.2s;
+    }
+    .btn-s:hover { background: rgba(29,158,117,0.1); border-color: var(--teal); }
+    .hero-class {
+      position: absolute; bottom: 2rem; left: 0; right: 0; text-align: center;
+      font-family: 'JetBrains Mono', monospace; font-size: 0.6rem;
+      letter-spacing: 0.2em; color: rgba(245,243,238,0.18);
+      text-transform: uppercase;
+      opacity: 0; animation: fadeUp 0.7s 0.8s forwards;
+    }
+
+    /* ─── SECTIONS BASE ─── */
+    .section-light { background: var(--white); color: #111827; }
+    .section-dark  { background: var(--dark-2); color: var(--white); }
+    .section-tinted { background: #F0EFEB; color: #111827; }
+    .inner {
+      max-width: 1100px; margin: 0 auto; padding: 6rem 2rem;
+    }
+    .section-label {
+      font-family: 'JetBrains Mono', monospace; font-size: 0.68rem;
+      letter-spacing: 0.2em; text-transform: uppercase;
+      color: var(--teal); margin-bottom: 1rem; display: block;
+    }
+    .section-h {
+      font-family: 'Big Shoulders Display', sans-serif; font-weight: 700;
+      font-size: clamp(2.2rem, 5vw, 3.5rem); line-height: 1;
+      letter-spacing: -0.01em; margin-bottom: 1.5rem;
+    }
+    .section-h.light { color: var(--dark); }
+    .section-h.dk    { color: var(--white); }
+
+    /* ─── PROBLEM SECTION ─── */
+    .problem-grid {
+      display: grid; grid-template-columns: 1fr 1fr; gap: 5rem;
+      align-items: start; margin-top: 3rem;
+    }
+    .problem-pull {
+      font-size: clamp(1.3rem, 2.5vw, 1.8rem); font-weight: 600;
+      line-height: 1.35; color: #111827;
+      border-left: 3px solid var(--teal); padding-left: 1.5rem;
+    }
+    .problem-text {
+      font-size: 1.05rem; line-height: 1.75; color: #374151;
+    }
+    .problem-text p + p { margin-top: 1rem; }
+    .problem-stats {
+      display: grid; grid-template-columns: repeat(3, 1fr);
+      gap: 1.5rem; margin-top: 4rem;
+    }
+    .pstat {
+      padding: 1.5rem; border: 1px solid rgba(17,24,39,0.1);
+      border-radius: 8px; background: white;
+      border-top: 3px solid var(--teal);
+    }
+    .pstat-num {
+      font-family: 'Big Shoulders Display', sans-serif; font-weight: 700;
+      font-size: 2.5rem; color: var(--teal); line-height: 1;
+      margin-bottom: 0.5rem;
+    }
+    .pstat-label {
+      font-family: 'Barlow Condensed', sans-serif; font-size: 0.9rem;
+      color: #6B7280; line-height: 1.4; letter-spacing: 0.02em;
+    }
+
+    /* ─── FRAMEWORK SECTION ─── */
+    .tier-grid {
+      display: grid; grid-template-columns: repeat(3, 1fr);
+      gap: 1.5px; margin-top: 3rem; border: 1.5px solid var(--border);
+      border-radius: 10px; overflow: hidden;
+    }
+    .tier {
+      padding: 2.5rem 2rem; background: rgba(255,255,255,0.03);
+      border-right: 1.5px solid var(--border);
+      transition: background 0.25s;
+    }
+    .tier:last-child { border-right: none; }
+    .tier:hover { background: rgba(29,158,117,0.05); }
+    .tier-badge {
+      display: inline-block; padding: 0.2rem 0.65rem;
+      border-radius: 3px; font-family: 'JetBrains Mono', monospace;
+      font-size: 0.65rem; letter-spacing: 0.15em; text-transform: uppercase;
+      margin-bottom: 1.25rem; font-weight: 500;
+    }
+    .t1 .tier-badge { background: rgba(29,158,117,0.15); color: var(--teal); }
+    .t2 .tier-badge { background: rgba(196,148,42,0.15); color: var(--gold); }
+    .t3 .tier-badge { background: rgba(226,75,74,0.12); color: var(--red); }
+    .tier-name {
+      font-family: 'Barlow Condensed', sans-serif; font-weight: 700;
+      font-size: 1.15rem; color: var(--white); letter-spacing: 0.04em;
+      margin-bottom: 0.5rem; text-transform: uppercase;
+    }
+    .tier-cep {
+      font-family: 'Big Shoulders Display', sans-serif; font-weight: 700;
+      font-size: 3rem; line-height: 1; margin-bottom: 0.25rem;
+    }
+    .t1 .tier-cep { color: var(--teal); }
+    .t2 .tier-cep { color: var(--gold); }
+    .t3 .tier-cep { color: var(--red); }
+    .tier-cep-label {
+      font-family: 'JetBrains Mono', monospace; font-size: 0.68rem;
+      color: var(--muted); letter-spacing: 0.1em; text-transform: uppercase;
+      margin-bottom: 1.5rem;
+    }
+    .tier-spec {
+      font-family: 'Barlow Condensed', sans-serif; font-size: 0.88rem;
+      color: rgba(245,243,238,0.55); line-height: 1.5; margin-bottom: 0.35rem;
+    }
+    .tier-spec span { color: rgba(245,243,238,0.85); }
+    .tier-usecase {
+      margin-top: 1.5rem; padding-top: 1.5rem;
+      border-top: 1px solid var(--border);
+      font-family: 'Spectral', serif; font-style: italic;
+      font-size: 0.9rem; color: var(--muted); line-height: 1.5;
+    }
+    .fw-note {
+      margin-top: 2.5rem; padding: 1.25rem 1.75rem;
+      border: 1px solid var(--border); border-radius: 6px;
+      background: rgba(29,158,117,0.05);
+    }
+    .fw-note p {
+      font-family: 'Barlow Condensed', sans-serif; font-size: 0.95rem;
+      color: rgba(245,243,238,0.65); line-height: 1.5;
+    }
+    .fw-note span { color: var(--teal); font-weight: 600; }
+
+    /* ─── SCENARIOS SECTION ─── */
+    .s-tabs {
+      display: flex; gap: 0; margin-bottom: 1.5rem;
+      border: 1px solid rgba(17,24,39,0.15);
+      border-radius: 6px; overflow: hidden; width: fit-content;
+    }
+    .s-tab {
+      padding: 0.6rem 1.6rem; background: transparent; border: none;
+      border-right: 1px solid rgba(17,24,39,0.15);
+      font-family: 'Barlow Condensed', sans-serif; font-weight: 600;
+      font-size: 0.82rem; letter-spacing: 0.1em; text-transform: uppercase;
+      color: #9CA3AF; cursor: pointer; transition: all 0.2s;
+    }
+    .s-tab:last-child { border-right: none; }
+    .s-tab.active { background: var(--teal); color: white; }
+    .s-tab:hover:not(.active) { background: rgba(29,158,117,0.07); color: #374151; }
+    #map {
+      height: 520px; border-radius: 10px; overflow: hidden;
+      border: 1px solid rgba(17,24,39,0.12);
+      box-shadow: 0 4px 24px rgba(0,0,0,0.08);
+    }
+    .map-legend {
+      display: flex; gap: 1.5rem; flex-wrap: wrap;
+      margin-top: 1rem; font-family: 'Barlow Condensed', sans-serif;
+      font-size: 0.82rem; color: #6B7280; align-items: center;
+    }
+    .leg-item { display: flex; align-items: center; gap: 6px; }
+    .leg-dot { width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0; }
+    .leg-line { width: 20px; height: 2px; flex-shrink: 0; border-radius: 1px; }
+    .sc-info { margin-top: 2rem; }
+    #sc-title {
+      font-family: 'Barlow Condensed', sans-serif; font-weight: 700;
+      font-size: 1.25rem; color: #111827; letter-spacing: 0.02em;
+      margin-bottom: 0.5rem;
+    }
+    #sc-desc {
+      font-size: 0.95rem; color: #6B7280; line-height: 1.65; max-width: 720px;
+    }
+    .scenario-grid {
+      display: grid; grid-template-columns: repeat(3, 1fr);
+      gap: 1.25rem; margin-top: 2.5rem;
+    }
+    .sc-card {
+      padding: 1.25rem 1.5rem; border-radius: 8px;
+      border: 1px solid rgba(17,24,39,0.1);
+      background: white; cursor: pointer;
+      transition: all 0.2s; border-top: 3px solid transparent;
+    }
+    .sc-card:hover { border-color: rgba(17,24,39,0.15); box-shadow: 0 2px 12px rgba(0,0,0,0.06); }
+    .sc-card.active-card { border-top-color: var(--teal); box-shadow: 0 2px 12px rgba(29,158,117,0.1); }
+    .sc-card-tier {
+      font-family: 'JetBrains Mono', monospace; font-size: 0.62rem;
+      letter-spacing: 0.15em; text-transform: uppercase; color: var(--teal);
+      margin-bottom: 0.4rem;
+    }
+    .sc-card-title {
+      font-family: 'Barlow Condensed', sans-serif; font-weight: 700;
+      font-size: 1rem; color: #111827; margin-bottom: 0.3rem;
+    }
+    .sc-card-sub {
+      font-size: 0.8rem; color: #9CA3AF; line-height: 1.4;
+    }
+
+    /* ─── REFERENCES ─── */
+    .ref-list {
+      display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-top: 2rem;
+    }
+    .ref-item {
+      padding: 1rem 1.25rem; border-radius: 6px;
+      border: 1px solid rgba(17,24,39,0.08); background: #FAFAF8;
+    }
+    .ref-tag {
+      font-family: 'JetBrains Mono', monospace; font-size: 0.6rem;
+      letter-spacing: 0.15em; text-transform: uppercase; color: var(--teal);
+      margin-bottom: 0.3rem;
+    }
+    .ref-title {
+      font-family: 'Barlow Condensed', sans-serif; font-size: 0.9rem;
+      font-weight: 600; color: #1F2937; margin-bottom: 0.2rem; line-height: 1.3;
+    }
+    .ref-source {
+      font-family: 'JetBrains Mono', monospace; font-size: 0.65rem;
+      color: #9CA3AF; letter-spacing: 0.04em;
+    }
+
+    /* ─── FOOTER ─── */
+    footer {
+      background: #060A12; padding: 3rem 2rem; text-align: center;
+      border-top: 1px solid var(--border);
+    }
+    .footer-brand {
+      font-family: 'Big Shoulders Display', sans-serif; font-weight: 900;
+      font-size: 2rem; color: var(--teal); letter-spacing: 0.05em;
+      margin-bottom: 0.75rem;
+    }
+    .footer-text {
+      font-family: 'JetBrains Mono', monospace; font-size: 0.68rem;
+      color: rgba(245,243,238,0.25); letter-spacing: 0.12em;
+      text-transform: uppercase; line-height: 2;
+    }
+    .footer-text a { color: var(--teal); transition: opacity 0.2s; }
+    .footer-text a:hover { opacity: 0.7; }
+
+    /* ─── LEAFLET OVERRIDES ─── */
+    .leaflet-bar a {
+      background-color: rgba(9,14,24,0.9) !important;
+      color: #1D9E75 !important;
+      border-bottom-color: rgba(29,158,117,0.25) !important;
+    }
+    .leaflet-bar a:hover {
+      background-color: rgba(29,158,117,0.15) !important;
+    }
+    .leaflet-control-attribution {
+      background: rgba(9,14,24,0.7) !important;
+      color: rgba(245,243,238,0.4) !important;
+      font-size: 10px !important;
+    }
+    .leaflet-control-attribution a { color: rgba(29,158,117,0.6) !important; }
+
+    /* ─── ANIMATIONS ─── */
+    @keyframes fadeUp {
+      from { opacity: 0; transform: translateY(16px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+    .reveal {
+      opacity: 0; transform: translateY(24px);
+      transition: opacity 0.7s, transform 0.7s;
+    }
+    .reveal.revealed { opacity: 1; transform: translateY(0); }
+
+    /* ─── RESPONSIVE ─── */
+    @media (max-width: 860px) {
+      .problem-grid { grid-template-columns: 1fr; gap: 2.5rem; }
+      .problem-stats { grid-template-columns: 1fr; }
+      .tier-grid { grid-template-columns: 1fr; }
+      .tier { border-right: none; border-bottom: 1.5px solid var(--border); }
+      .tier:last-child { border-bottom: none; }
+      .ref-list { grid-template-columns: 1fr; }
+      .scenario-grid { grid-template-columns: 1fr; }
+      .nav-links { gap: 1rem; }
+      #map { height: 380px; }
+    }
+    @media (max-width: 560px) {
+      .inner { padding: 4rem 1.25rem; }
+      .hero-wrap { padding: 3rem 1.25rem 5rem; }
+      .nav-link:not(.nav-gh) { display: none; }
+    }
+  </style>
+</head>
+
+<body>
+
+  <!-- ─── NAV ─── -->
+  <nav id="nav">
+    <a href="#" class="nav-brand">DCEF</a>
+    <div class="nav-links">
+      <a href="#problem"   class="nav-link">The Problem</a>
+      <a href="#framework" class="nav-link">Framework</a>
+      <a href="#scenarios" class="nav-link">Scenarios</a>
+      <a href="https://github.com/nick-smock/dcef" target="_blank" class="nav-link nav-gh">GitHub ↗</a>
+    </div>
+  </nav>
+
+  <!-- ─── HERO ─── -->
+  <section id="hero">
+    <div class="scan"></div>
+    <div class="hero-wrap">
+      <p class="hero-eyebrow">SYE 6942 &nbsp;·&nbsp; Wayne State University &nbsp;·&nbsp; 2026</p>
+      <h1 class="hero-title">DCEF</h1>
+      <p class="hero-full">Distributed C-UAS Evaluation Framework</p>
+      <blockquote class="hero-quote">
+        "We test counter-drone systems everywhere and can't compare any of it. DCEF fixes that."
+      </blockquote>
+      <div class="hero-meta">
+        <p class="hero-authors">Nick Smock &amp; Dave Ameche</p>
+        <p class="hero-inst">Systems Engineering Capstone &nbsp;·&nbsp; Wayne State University &nbsp;·&nbsp; Detroit, MI</p>
+      </div>
+      <div class="hero-cta">
+        <a href="#framework" class="btn-p">Read the Framework</a>
+        <a href="https://github.com/nick-smock/dcef" target="_blank" class="btn-s">View on GitHub ↗</a>
+      </div>
+    </div>
+    <p class="hero-class">// unclassified &nbsp;—&nbsp; public release // dcef v1.0 // may 2026 //</p>
+  </section>
+
+  <!-- ─── THE PROBLEM ─── -->
+  <section id="problem" class="section-light">
+    <div class="inner">
+      <span class="section-label" style="color:var(--teal)">The Problem</span>
+      <h2 class="section-h light">A fragmented enterprise<br>without a common language.</h2>
+
+      <div class="problem-grid reveal">
+        <div>
+          <p class="problem-pull">
+            "The U.S. counter-drone enterprise generates enormous amounts of test data.
+            Almost none of it is comparable."
+          </p>
+        </div>
+        <div class="problem-text">
+          <p>
+            Every service, agency, and organization conducts counter-UAS evaluations
+            independently — recording different metrics, using different formats,
+            and storing results in isolated silos of inconsistent quality. The result
+            is a community that is data-rich and information-poor.
+          </p>
+          <p>
+            The Close Combat Lethality Task Force FY25 Annual Report documented that
+            all three military services continue to test commercial C-UAS solutions
+            "independently in a disjointed manner." JIATF 401 was established in
+            August 2025 with a marketplace for C-UAS acquisition — but that
+            marketplace only works if every competition produces comparable,
+            defensible data.
+          </p>
+          <p>
+            Without a standardized evaluation methodology, the government is spending
+            money on competitions whose results cannot be compared, aggregated, or
+            used to build the models that the modern threat environment demands.
+          </p>
+        </div>
+      </div>
+
+      <div class="problem-stats reveal">
+        <div class="pstat">
+          <div class="pstat-num">0</div>
+          <div class="pstat-label">Enterprise-level data schemas for C-UAS test results across DoD, DHS, and industry</div>
+        </div>
+        <div class="pstat">
+          <div class="pstat-num">∞</div>
+          <div class="pstat-label">Isolated datasets produced annually — none directly comparable to any other</div>
+        </div>
+        <div class="pstat">
+          <div class="pstat-num">3</div>
+          <div class="pstat-label">Services testing C-UAS independently with no coordinated data standardization</div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ─── THE FRAMEWORK ─── -->
+  <section id="framework" class="section-dark">
+    <div class="inner">
+      <span class="section-label">The DCEF Framework</span>
+      <h2 class="section-h dk">Three tiers. One standard.<br>Anywhere in the country.</h2>
+
+      <p style="color:var(--muted);font-size:1rem;max-width:680px;margin-top:1rem;line-height:1.7;font-family:'Barlow Condensed',sans-serif;font-size:1.05rem;letter-spacing:0.01em;" class="reveal">
+        DCEF's core technical contribution is using onboard drone telemetry — PX4 ULog
+        and MAVLink tlog files from Pixhawk-based aircraft — as calibrated ground truth,
+        correlated against radar, optical, and acoustic sensor outputs. The tier you use
+        depends on what you're evaluating.
+      </p>
+
+      <div class="tier-grid reveal">
+        <div class="tier t1">
+          <div class="tier-badge">Tier 1</div>
+          <div class="tier-name">Initial Characterization</div>
+          <div class="tier-cep">≤3m</div>
+          <div class="tier-cep-label">CEP &nbsp;·&nbsp; Circular Error Probable</div>
+          <p class="tier-spec">Hardware: <span>Standard GNSS (u-blox M8/M9 class)</span></p>
+          <p class="tier-spec">Log format: <span>PX4 ULog / MAVLink tlog</span></p>
+          <p class="tier-spec">Infrastructure: <span>Minimal — onboard only</span></p>
+          <p class="tier-usecase">
+            Mass vendor screening. Up to 100+ systems evaluated against common
+            flight profiles. Establishes baseline detection, tracking, and classification
+            performance. Gateway to Tier 2.
+          </p>
+        </div>
+        <div class="tier t2">
+          <div class="tier-badge">Tier 2</div>
+          <div class="tier-name">Comparative Analysis</div>
+          <div class="tier-cep">≤30cm</div>
+          <div class="tier-cep-label">CEP &nbsp;·&nbsp; Circular Error Probable</div>
+          <p class="tier-spec">Hardware: <span>Entry-level RTK (dual-band GNSS)</span></p>
+          <p class="tier-spec">Log format: <span>PX4 ULog / MAVLink tlog</span></p>
+          <p class="tier-spec">Infrastructure: <span>RTK corrections via NTRIP or base</span></p>
+          <p class="tier-usecase">
+            Finalist comparison. Performance differentiation at the margins — where
+            two systems score within 5% of each other in Tier 1, Tier 2 resolves
+            the difference with data, not vibes.
+          </p>
+        </div>
+        <div class="tier t3">
+          <div class="tier-badge">Tier 3</div>
+          <div class="tier-name">High-Fidelity Assessment</div>
+          <div class="tier-cep">≤5cm</div>
+          <div class="tier-cep-label">CEP &nbsp;·&nbsp; Circular Error Probable</div>
+          <p class="tier-spec">Hardware: <span>Full RTK — u-blox F9P class</span></p>
+          <p class="tier-spec">Log format: <span>PX4 ULog / MAVLink tlog + RTCM</span></p>
+          <p class="tier-spec">Infrastructure: <span>Fixed surveyed base station on range</span></p>
+          <p class="tier-usecase">
+            Kinetic defeat evaluation. At this accuracy level, engagement geometry
+            error is effectively eliminated — directly reducing rounds required to
+            achieve a defined Pk at range. Tighter CEP means less ammunition.
+          </p>
+        </div>
+      </div>
+
+      <div class="fw-note reveal">
+        <p>
+          <span>Decision gates are mandatory.</span> A system cannot advance from Tier 1 to Tier 2
+          evaluation without meeting defined threshold KPPs. Tier 3 requires Tier 2 passage.
+          This is not a preference — it is a technical review requirement encoded in the DCEF SEP,
+          aligned with DoD Manual 5000.100 and the Integrated Decision Support Key framework.
+        </p>
+      </div>
+    </div>
+  </section>
+
+  <!-- ─── TEST SCENARIOS ─── -->
+  <section id="scenarios" class="section-tinted">
+    <div class="inner">
+      <span class="section-label" style="color:var(--teal)">Live Test Scenarios</span>
+      <h2 class="section-h light">Three scenarios. One test site.<br>Real satellite imagery.</h2>
+
+      <p style="color:#6B7280;font-family:'Barlow Condensed',sans-serif;font-size:1.05rem;margin-top:0.5rem;margin-bottom:2.5rem;max-width:680px;line-height:1.6;" class="reveal">
+        Reference test site: <strong style="color:#374151;font-family:'JetBrains Mono',monospace;font-size:0.85rem;">44°34′52″N &nbsp;84°50′04″W</strong> &nbsp;—&nbsp;
+        Roscommon County, Michigan. Class G airspace below 1,200 ft AGL. Open terrain.
+        Good satellite geometry. Select a scenario to visualize the flight profiles.
+      </p>
+
+      <div class="reveal">
+        <div class="s-tabs">
+          <button class="s-tab active" data-key="easy">Scenario 1 — Easy</button>
+          <button class="s-tab" data-key="medium">Scenario 2 — Medium</button>
+          <button class="s-tab" data-key="hard">Scenario 3 — Hard</button>
+        </div>
+
+        <div id="map"></div>
+
+        <div class="map-legend">
+          <div class="leg-item"><span class="leg-dot" style="background:#1D9E75"></span> C-UAS sensor</div>
+          <div class="leg-item"><span class="leg-line" style="background:#1D9E75;opacity:0.5;border-top:1px dashed #1D9E75;height:0"></span> Range rings (250 m)</div>
+          <div class="leg-item"><span class="leg-dot" style="background:#E24B4A"></span> UAS truth track</div>
+          <div class="leg-item" style="font-size:0.72rem;color:#9CA3AF;font-family:'JetBrains Mono',monospace;">Tap track for drone ID · Scroll to zoom</div>
+        </div>
+
+        <div class="sc-info">
+          <p id="sc-title">Single Quadcopter — Direct Ingress</p>
+          <p id="sc-desc">A single Group 1 UAS executes a direct north ingress from 1,000 m at 50 m AGL. Establishes baseline detection, tracking, and classification performance. Standard GNSS truth (≤3 m CEP). DCEF Tier 1 evaluation.</p>
+        </div>
+
+        <div class="scenario-grid">
+          <div class="sc-card active-card" data-key="easy" onclick="clickCard(this)">
+            <div class="sc-card-tier">Tier 1 · Easy</div>
+            <div class="sc-card-title">Single Direct Ingress</div>
+            <div class="sc-card-sub">1 × Group 1 UAS · Direct N ingress · 1,000 m · 50 m AGL</div>
+          </div>
+          <div class="sc-card" data-key="medium" onclick="clickCard(this)">
+            <div class="sc-card-tier">Tier 2 · Medium</div>
+            <div class="sc-card-title">Pizza Slice Formation</div>
+            <div class="sc-card-sub">3 × Group 1 UAS · Simultaneous convergent approach · 60° arc</div>
+          </div>
+          <div class="sc-card" data-key="hard" onclick="clickCard(this)">
+            <div class="sc-card-tier">Tier 3 · Hard</div>
+            <div class="sc-card-title">Mixed Threat Package</div>
+            <div class="sc-card-sub">Direct + orbit ISR + zigzag · Multi-vector saturation attack</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ─── REFERENCES ─── -->
+  <section id="references" class="section-light">
+    <div class="inner">
+      <span class="section-label" style="color:var(--teal)">Public References</span>
+      <h2 class="section-h light">All sources cited in DCEF<br>are unclassified and public.</h2>
+      <div class="ref-list reveal">
+        <div class="ref-item">
+          <div class="ref-tag">Executive Order</div>
+          <div class="ref-title">EO 14305 — Restoring American Airspace Sovereignty</div>
+          <div class="ref-source">White House · June 6, 2025</div>
+        </div>
+        <div class="ref-item">
+          <div class="ref-tag">SecDef Memorandum</div>
+          <div class="ref-title">Establishment of Joint Interagency Task Force 401</div>
+          <div class="ref-source">Office of the Secretary of Defense · August 27, 2025</div>
+        </div>
+        <div class="ref-item">
+          <div class="ref-tag">Strategy Document</div>
+          <div class="ref-title">DoW Acquisition Transformation Strategy — Arsenal of Freedom</div>
+          <div class="ref-source">USD(A&S) · November 2025</div>
+        </div>
+        <div class="ref-item">
+          <div class="ref-tag">Annual Report</div>
+          <div class="ref-title">Close Combat Lethality Task Force FY25 Annual Report</div>
+          <div class="ref-source">CCLTF · Department of War · 2025</div>
+        </div>
+        <div class="ref-item">
+          <div class="ref-tag">Industry Day Briefing</div>
+          <div class="ref-title">JIATF 401 Industry Day — Unclassified Briefing</div>
+          <div class="ref-source">Joint Interagency Task Force 401 · March 5, 2026</div>
+        </div>
+        <div class="ref-item">
+          <div class="ref-tag">DoD Manual</div>
+          <div class="ref-title">DoDM 5000.100 — T&amp;E Master Plans and T&amp;E Strategies</div>
+          <div class="ref-source">Director, Operational Test &amp; Evaluation · December 9, 2024</div>
+        </div>
+        <div class="ref-item">
+          <div class="ref-tag">Joint Publication</div>
+          <div class="ref-title">JP 3-60 — Joint Targeting</div>
+          <div class="ref-source">Joint Chiefs of Staff · September 28, 2018</div>
+        </div>
+        <div class="ref-item">
+          <div class="ref-tag">JIATF 401 Guide</div>
+          <div class="ref-title">Science of Counter-UAS Operations — Safeguarding Freedoms &amp; Preserving Privacy</div>
+          <div class="ref-source">Joint Interagency Task Force 401 · 2025</div>
+        </div>
+        <div class="ref-item">
+          <div class="ref-tag">JIATF 401 Guide</div>
+          <div class="ref-title">Physical Protection of Critical Infrastructure: Reframing Security for the Drone Threat</div>
+          <div class="ref-source">Joint Interagency Task Force 401 · 2025</div>
+        </div>
+        <div class="ref-item">
+          <div class="ref-tag">NSTC Standard</div>
+          <div class="ref-title">Standard Guidelines for Testing and Evaluation of C-UAS Technologies</div>
+          <div class="ref-source">National Science &amp; Technology Council · U.S. Government</div>
+        </div>
+        <div class="ref-item">
+          <div class="ref-tag">GPS Standard</div>
+          <div class="ref-title">Global Positioning System Standard Positioning Service Performance Standard</div>
+          <div class="ref-source">USSF / NAVCEN · 2020</div>
+        </div>
+        <div class="ref-item">
+          <div class="ref-tag">DoD SEP Template</div>
+          <div class="ref-title">Systems Engineering Plan Template</div>
+          <div class="ref-source">ODASD(SE) · Acquipedia / WARU DAU</div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ─── FOOTER ─── -->
+  <footer>
+    <div class="footer-brand">DCEF</div>
+    <div class="footer-text">
+      <p>Distributed C-UAS Evaluation Framework &nbsp;·&nbsp; Version 1.0 &nbsp;·&nbsp; May 2026</p>
+      <p>Nick Smock &amp; Dave Ameche &nbsp;·&nbsp; SYE 6942 &nbsp;·&nbsp; Wayne State University, Detroit MI</p>
+      <p style="margin-top:0.5rem">
+        <a href="https://github.com/nick-smock/dcef" target="_blank">github.com/nick-smock/dcef</a>
+        &nbsp;·&nbsp; // unclassified — public release //
+      </p>
+    </div>
+  </footer>
+
+  <!-- ─── SCRIPTS ─── -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
+  <script>
+    /* ── COORDINATE HELPERS ── */
+    const CTR = [44.581194, -84.834528];
+    const LAT_S = 1 / 111320;
+    const LON_S = 1 / (111320 * Math.cos(44.581194 * Math.PI / 180));
+
+    function ll(x, y) {
+      return [CTR[0] + y * LAT_S, CTR[1] + x * LON_S];
+    }
+
+    /* ── PATH GENERATORS ── */
+    function pStraight(x0, y0, n) {
+      return Array.from({length: n}, (_, i) => {
+        const t = i / (n - 1);
+        return ll(x0 * (1 - t), y0 * (1 - t));
+      });
+    }
+
+    function pOrbit(r, n) {
+      return Array.from({length: n + 1}, (_, i) => {
+        const a = (i / n) * Math.PI * 2;
+        return ll(r * Math.cos(a), r * Math.sin(a));
+      });
+    }
+
+    function pZigzag(n) {
+      const kp = [[1000,0],[830,200],[650,280],[500,0],[350,-240],[200,-180],[80,-60],[0,0]];
+      return Array.from({length: n}, (_, i) => {
+        const t = i / (n - 1) * (kp.length - 1);
+        const lo = Math.min(Math.floor(t), kp.length - 2);
+        const f = t - lo;
+        return ll(kp[lo][0]*(1-f)+kp[lo+1][0]*f, kp[lo][1]*(1-f)+kp[lo+1][1]*f);
+      });
+    }
+
+    /* ── SCENARIO DATA ── */
+    const SCNS = {
+      easy: {
+        title: 'Single Quadcopter — Direct Ingress',
+        desc:  'A single Group 1 UAS executes a direct north ingress from 1,000 m at 50 m AGL. Establishes baseline detection, tracking, and classification performance. Standard GNSS truth (≤3 m CEP). DCEF Tier 1 evaluation.',
+        drones: [
+          { id: 'UAS-01', color: '#E24B4A', path: pStraight(0, 1000, 60) }
+        ]
+      },
+      medium: {
+        title: 'Three-Ship Formation — Pizza Slice Convergent Ingress',
+        desc:  'Three quadcopters approach simultaneously from a 60° arc, converging on the sensor from 1,000 m at 50 m AGL. Tests multi-target tracking, simultaneous classification, and track-to-track association. Entry-level RTK truth (≤30 cm CEP). DCEF Tier 2 evaluation.',
+        drones: [
+          { id: 'UAS-01 (NNW)',  color: '#E24B4A', path: pStraight(-500, 866, 60) },
+          { id: 'UAS-02 (N)',    color: '#D85A30', path: pStraight(0,    1000, 60) },
+          { id: 'UAS-03 (NNE)', color: '#BA7517', path: pStraight(500,  866, 60) }
+        ]
+      },
+      hard: {
+        title: 'Mixed Threat Package — Direct + Orbit + Zigzag',
+        desc:  'A complex threat package: one direct-ingress attacker, one ISR drone orbiting at 500 m standoff, and one erratic zigzag attacker from the east. Tests engagement prioritization under JP 3-60 HVT/HPT doctrine, multi-vector detection, and system decision-making under saturation conditions. Full RTK truth (≤5 cm CEP). DCEF Tier 3 evaluation.',
+        drones: [
+          { id: 'UAS-01 Direct',   color: '#E24B4A', path: pStraight(0, 1000, 60) },
+          { id: 'UAS-02 Orbit (ISR)', color: '#7F77DD', path: pOrbit(500, 72) },
+          { id: 'UAS-03 Zigzag',   color: '#1D9E75', path: pZigzag(60) }
+        ]
+      }
+    };
+
+    /* ── MAP INIT ── */
+    let leafMap, activeLayers = [];
+
+    function initMap() {
+      leafMap = L.map('map', { center: CTR, zoom: 14, zoomControl: true });
+
+      L.tileLayer(
+        'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}',
+        { attribution: '© Esri', maxZoom: 19 }
+      ).addTo(leafMap);
+
+      /* Range rings */
+      [250, 500, 750, 1000].forEach(r => {
+        L.circle(CTR, {
+          radius: r, color: '#1D9E75', weight: 0.8,
+          opacity: 0.5, fillOpacity: 0, dashArray: '4 10'
+        }).addTo(leafMap);
+      });
+
+      /* Sensor marker */
+      L.circleMarker(CTR, {
+        radius: 9, color: '#1D9E75', weight: 2,
+        fillColor: '#1D9E75', fillOpacity: 0.35, opacity: 1
+      }).addTo(leafMap)
+        .bindTooltip('<b>C-UAS Sensor</b><br>44°34′52″N 84°50′04″W', { direction: 'right' });
+
+      drawScenario('easy');
+    }
+
+    function clearActiveLayers() {
+      activeLayers.forEach(l => leafMap.removeLayer(l));
+      activeLayers = [];
+    }
+
+    function drawScenario(key) {
+      clearActiveLayers();
+      const sc = SCNS[key];
+      sc.drones.forEach(d => {
+        const line = L.polyline(d.path, {
+          color: d.color, weight: 2.5, opacity: 0.92,
+          lineJoin: 'round', lineCap: 'round'
+        }).addTo(leafMap).bindTooltip(d.id, { sticky: true });
+        activeLayers.push(line);
+
+        const startMk = L.circleMarker(d.path[0], {
+          radius: 5, color: 'white', weight: 1.5,
+          fillColor: d.color, fillOpacity: 1, opacity: 1
+        }).addTo(leafMap).bindTooltip(d.id + ' — start', { direction: 'top' });
+        activeLayers.push(startMk);
+      });
+    }
+
+    /* ── SCENARIO SWITCHING ── */
+    function setScenario(key) {
+      document.querySelectorAll('.s-tab').forEach(b =>
+        b.classList.toggle('active', b.dataset.key === key)
+      );
+      document.querySelectorAll('.sc-card').forEach(c =>
+        c.classList.toggle('active-card', c.dataset.key === key)
+      );
+      const sc = SCNS[key];
+      document.getElementById('sc-title').textContent = sc.title;
+      document.getElementById('sc-desc').textContent  = sc.desc;
+      drawScenario(key);
+    }
+
+    document.querySelectorAll('.s-tab').forEach(btn =>
+      btn.addEventListener('click', () => setScenario(btn.dataset.key))
+    );
+
+    function clickCard(card) { setScenario(card.dataset.key); }
+
+    /* ── SCROLL REVEAL ── */
+    const obs = new IntersectionObserver(entries => {
+      entries.forEach(e => {
+        if (e.isIntersecting) { e.target.classList.add('revealed'); obs.unobserve(e.target); }
+      });
+    }, { threshold: 0.08 });
+    document.querySelectorAll('.reveal').forEach(el => obs.observe(el));
+
+    /* ── BOOT ── */
+    window.addEventListener('load', initMap);
+  </script>
+</body>
+</html>
