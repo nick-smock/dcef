@@ -1,0 +1,1336 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Framework — DCEF</title>
+  <meta name="description" content="The DCEF systems engineering framework — scope, tiered accuracy structure, data schema, org structure, and risk overview.">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@400;600;700;800&family=Barlow:wght@300;400;500;600&family=Share+Tech+Mono&display=swap" rel="stylesheet">
+
+  <style>
+    :root {
+      --orange: #f26115;
+      --orange-dim: rgba(242, 97, 21, 0.12);
+      --orange-mid: rgba(242, 97, 21, 0.4);
+      --black: #060606;
+      --surface: #0e0e0e;
+      --surface-2: #161616;
+      --surface-3: #1c1c1c;
+      --border: rgba(255,255,255,0.07);
+      --border-orange: rgba(242,97,21,0.25);
+      --text: #f0f0f0;
+      --text-dim: #888;
+      --text-dimmer: #444;
+    }
+
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    html { scroll-behavior: smooth; }
+
+    body {
+      background: var(--black);
+      color: var(--text);
+      font-family: 'Barlow', sans-serif;
+      font-weight: 400;
+      overflow-x: hidden;
+    }
+
+    /* ── NAV ──────────────────────────────────────────── */
+    nav {
+      position: fixed;
+      top: 0; left: 0; right: 0;
+      z-index: 100;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 2.5rem;
+      height: 64px;
+      background: rgba(6,6,6,0.92);
+      backdrop-filter: blur(12px);
+      border-bottom: 1px solid var(--border);
+    }
+
+    .nav-icon { height: 104px; width: auto; opacity: 0.95; }
+
+    .nav-links { display: flex; gap: 2.4rem; list-style: none; }
+
+    .nav-links a {
+      font-family: 'Barlow Condensed', sans-serif;
+      font-weight: 600;
+      font-size: 0.78rem;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      color: var(--text-dim);
+      text-decoration: none;
+      transition: color 0.2s;
+    }
+
+    .nav-links a:hover,
+    .nav-links a.active { color: var(--orange); }
+
+    /* ── PAGE HERO ────────────────────────────────────── */
+    .page-hero {
+      padding: 140px 0 80px;
+      background: var(--surface);
+      border-bottom: 1px solid var(--border);
+      position: relative;
+      overflow: hidden;
+    }
+
+    .page-hero::before {
+      content: 'FRAMEWORK';
+      position: absolute;
+      right: -1rem;
+      top: 50%;
+      transform: translateY(-50%);
+      font-family: 'Barlow Condensed', sans-serif;
+      font-weight: 800;
+      font-size: clamp(6rem, 14vw, 13rem);
+      color: rgba(255,255,255,0.025);
+      letter-spacing: 0.05em;
+      white-space: nowrap;
+      pointer-events: none;
+      line-height: 1;
+    }
+
+    .page-hero .container {
+      position: relative;
+      z-index: 1;
+    }
+
+    .breadcrumb {
+      font-family: 'Share Tech Mono', monospace;
+      font-size: 0.68rem;
+      letter-spacing: 0.2em;
+      color: var(--text-dimmer);
+      text-transform: uppercase;
+      margin-bottom: 1.4rem;
+    }
+
+    .breadcrumb a {
+      color: var(--orange);
+      text-decoration: none;
+    }
+
+    .breadcrumb a:hover { text-decoration: underline; }
+
+    .page-hero h1 {
+      font-family: 'Barlow Condensed', sans-serif;
+      font-weight: 800;
+      font-size: clamp(3rem, 6vw, 5.5rem);
+      text-transform: uppercase;
+      letter-spacing: 0.03em;
+      line-height: 0.95;
+      margin-bottom: 1.5rem;
+    }
+
+    .page-hero h1 span { color: var(--orange); }
+
+    .page-hero .lead {
+      font-size: 1.1rem;
+      color: var(--text-dim);
+      max-width: 620px;
+      line-height: 1.75;
+    }
+
+    /* ── SHARED ───────────────────────────────────────── */
+    .container {
+      max-width: 1160px;
+      margin: 0 auto;
+      padding: 0 2.5rem;
+    }
+
+    section { padding: 6rem 0; }
+
+    .section-label {
+      font-family: 'Share Tech Mono', monospace;
+      font-size: 0.68rem;
+      letter-spacing: 0.25em;
+      color: var(--orange);
+      text-transform: uppercase;
+      margin-bottom: 1rem;
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+    }
+
+    .section-label::before {
+      content: '';
+      display: block;
+      width: 24px;
+      height: 1px;
+      background: var(--orange);
+    }
+
+    .section-title {
+      font-family: 'Barlow Condensed', sans-serif;
+      font-weight: 800;
+      font-size: clamp(1.8rem, 3vw, 2.8rem);
+      text-transform: uppercase;
+      letter-spacing: 0.03em;
+      margin-bottom: 2.5rem;
+      line-height: 1.05;
+    }
+
+    /* ── OVERVIEW ─────────────────────────────────────── */
+    #overview {
+      background: var(--black);
+      border-bottom: 1px solid var(--border);
+    }
+
+    .overview-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 5rem;
+      align-items: start;
+    }
+
+    .overview-text p {
+      font-size: 1.05rem;
+      line-height: 1.85;
+      color: #aaa;
+      margin-bottom: 1.2rem;
+    }
+
+    .overview-text p:last-child { margin-bottom: 0; }
+
+    .overview-stats {
+      display: flex;
+      flex-direction: column;
+      gap: 1px;
+      background: var(--border);
+      border: 1px solid var(--border);
+    }
+
+    .stat-row {
+      background: var(--surface);
+      padding: 1.6rem 2rem;
+      display: flex;
+      align-items: flex-start;
+      gap: 1.5rem;
+      transition: background 0.2s;
+    }
+
+    .stat-row:hover { background: var(--surface-2); }
+
+    .stat-num {
+      font-family: 'Barlow Condensed', sans-serif;
+      font-weight: 800;
+      font-size: 2.4rem;
+      color: var(--orange);
+      line-height: 1;
+      min-width: 72px;
+    }
+
+    .stat-detail strong {
+      font-family: 'Barlow Condensed', sans-serif;
+      font-weight: 700;
+      font-size: 1rem;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      display: block;
+      margin-bottom: 0.3rem;
+    }
+
+    .stat-detail span {
+      font-size: 0.85rem;
+      color: var(--text-dim);
+      line-height: 1.5;
+    }
+
+    /* ── SCOPE ────────────────────────────────────────── */
+    #scope {
+      background: var(--surface);
+      border-bottom: 1px solid var(--border);
+    }
+
+    .scope-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 1px;
+      background: var(--border);
+      border: 1px solid var(--border);
+    }
+
+    .scope-col {
+      background: var(--surface);
+      padding: 2.8rem 2.4rem;
+    }
+
+    .scope-col-header {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+      margin-bottom: 2rem;
+    }
+
+    .scope-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      flex-shrink: 0;
+    }
+
+    .scope-dot.in  { background: var(--orange); }
+    .scope-dot.out { background: var(--text-dimmer); }
+
+    .scope-col-header h3 {
+      font-family: 'Barlow Condensed', sans-serif;
+      font-weight: 700;
+      font-size: 1rem;
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+    }
+
+    .scope-items {
+      list-style: none;
+      display: flex;
+      flex-direction: column;
+      gap: 0.9rem;
+    }
+
+    .scope-items li {
+      font-size: 0.92rem;
+      color: var(--text-dim);
+      line-height: 1.55;
+      padding-left: 1.2rem;
+      position: relative;
+    }
+
+    .scope-items li::before {
+      content: '—';
+      position: absolute;
+      left: 0;
+      color: var(--text-dimmer);
+    }
+
+    .scope-note {
+      margin-top: 2rem;
+      padding: 1.2rem 1.5rem;
+      border-left: 2px solid var(--orange);
+      background: var(--orange-dim);
+      font-size: 0.88rem;
+      color: var(--text-dim);
+      line-height: 1.65;
+    }
+
+    /* ── TIERS ────────────────────────────────────────── */
+    #tiers {
+      background: var(--black);
+      border-bottom: 1px solid var(--border);
+    }
+
+    .tier-blocks {
+      display: flex;
+      flex-direction: column;
+      gap: 1px;
+      background: var(--border);
+      border: 1px solid var(--border);
+    }
+
+    .tier-block {
+      background: var(--surface);
+      display: grid;
+      grid-template-columns: 200px 1fr 1fr 1fr;
+      align-items: stretch;
+      transition: background 0.2s;
+    }
+
+    .tier-block:hover { background: var(--surface-2); }
+
+    .tier-id {
+      padding: 2.8rem 2.2rem;
+      border-right: 1px solid var(--border);
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      gap: 0.4rem;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .tier-id::before {
+      content: '';
+      position: absolute;
+      left: 0; top: 0; bottom: 0;
+      width: 3px;
+      background: var(--orange);
+    }
+
+    .tier-tag {
+      font-family: 'Share Tech Mono', monospace;
+      font-size: 0.62rem;
+      letter-spacing: 0.2em;
+      color: var(--orange);
+    }
+
+    .tier-cep-big {
+      font-family: 'Barlow Condensed', sans-serif;
+      font-weight: 800;
+      font-size: 2.6rem;
+      line-height: 1;
+      color: #fff;
+    }
+
+    .tier-cep-unit {
+      font-family: 'Share Tech Mono', monospace;
+      font-size: 0.65rem;
+      color: var(--text-dim);
+      letter-spacing: 0.12em;
+    }
+
+    .tier-cell {
+      padding: 2.2rem 2rem;
+      border-right: 1px solid var(--border);
+    }
+
+    .tier-cell:last-child { border-right: none; }
+
+    .tier-cell-label {
+      font-family: 'Share Tech Mono', monospace;
+      font-size: 0.6rem;
+      letter-spacing: 0.18em;
+      color: var(--text-dimmer);
+      text-transform: uppercase;
+      margin-bottom: 0.6rem;
+    }
+
+    .tier-cell-title {
+      font-family: 'Barlow Condensed', sans-serif;
+      font-weight: 700;
+      font-size: 1.05rem;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      margin-bottom: 0.6rem;
+    }
+
+    .tier-cell p {
+      font-size: 0.88rem;
+      color: var(--text-dim);
+      line-height: 1.6;
+    }
+
+    .tier-hardware-tag {
+      display: inline-block;
+      margin-top: 0.8rem;
+      font-family: 'Share Tech Mono', monospace;
+      font-size: 0.62rem;
+      letter-spacing: 0.1em;
+      color: var(--text-dimmer);
+      border: 1px solid var(--text-dimmer);
+      padding: 0.2rem 0.5rem;
+    }
+
+    /* ── DATA SCHEMA ──────────────────────────────────── */
+    #schema {
+      background: var(--surface);
+      border-bottom: 1px solid var(--border);
+    }
+
+    .schema-intro {
+      max-width: 680px;
+      margin-bottom: 2.5rem;
+    }
+
+    .schema-intro p {
+      font-size: 1rem;
+      color: var(--text-dim);
+      line-height: 1.8;
+    }
+
+    .schema-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 0.88rem;
+      border: 1px solid var(--border);
+    }
+
+    .schema-table thead tr {
+      background: var(--surface-3);
+      border-bottom: 1px solid var(--border-orange);
+    }
+
+    .schema-table th {
+      font-family: 'Share Tech Mono', monospace;
+      font-size: 0.62rem;
+      letter-spacing: 0.18em;
+      text-transform: uppercase;
+      color: var(--orange);
+      padding: 1rem 1.4rem;
+      text-align: left;
+      font-weight: 400;
+    }
+
+    .schema-table tbody tr {
+      border-bottom: 1px solid var(--border);
+      transition: background 0.15s;
+    }
+
+    .schema-table tbody tr:last-child { border-bottom: none; }
+    .schema-table tbody tr:hover { background: var(--surface-2); }
+
+    .schema-table td {
+      padding: 0.95rem 1.4rem;
+      vertical-align: top;
+      color: var(--text-dim);
+      line-height: 1.55;
+    }
+
+    .schema-table td:first-child {
+      font-family: 'Share Tech Mono', monospace;
+      font-size: 0.78rem;
+      color: var(--text);
+      white-space: nowrap;
+    }
+
+    .schema-table td:nth-child(2) {
+      font-family: 'Share Tech Mono', monospace;
+      font-size: 0.72rem;
+      color: var(--orange);
+      white-space: nowrap;
+    }
+
+    .badge {
+      display: inline-block;
+      font-family: 'Share Tech Mono', monospace;
+      font-size: 0.58rem;
+      letter-spacing: 0.1em;
+      padding: 0.15rem 0.5rem;
+      border: 1px solid;
+      text-transform: uppercase;
+    }
+
+    .badge-telem { color: #4a9eff; border-color: rgba(74,158,255,0.3); }
+    .badge-sensor { color: #a78bfa; border-color: rgba(167,139,250,0.3); }
+    .badge-derived { color: var(--orange); border-color: var(--border-orange); }
+
+    /* ── ORG CHART ────────────────────────────────────── */
+    #org {
+      background: var(--black);
+      border-bottom: 1px solid var(--border);
+    }
+
+    .org-wrap {
+      overflow-x: auto;
+      padding-bottom: 1rem;
+    }
+
+    .org-chart {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 0;
+      min-width: 780px;
+    }
+
+    /* Row 0 — top level */
+    .org-row {
+      display: flex;
+      justify-content: center;
+      gap: 2rem;
+      position: relative;
+      width: 100%;
+    }
+
+    .org-connector-v {
+      width: 1px;
+      background: var(--border-orange);
+      margin: 0 auto;
+    }
+
+    .org-connector-v.short { height: 28px; }
+    .org-connector-v.tall  { height: 40px; }
+
+    .org-connector-h {
+      height: 1px;
+      background: var(--border-orange);
+      position: absolute;
+    }
+
+    .org-node {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      padding: 1.2rem 1.5rem;
+      min-width: 170px;
+      max-width: 200px;
+      text-align: center;
+      position: relative;
+      transition: border-color 0.2s, background 0.2s;
+      flex-shrink: 0;
+    }
+
+    .org-node:hover {
+      border-color: var(--border-orange);
+      background: var(--surface-2);
+    }
+
+    .org-node.primary {
+      border-top: 2px solid var(--orange);
+    }
+
+    .org-node.secondary {
+      border-top: 2px solid rgba(242,97,21,0.4);
+    }
+
+    .org-node-role {
+      font-family: 'Share Tech Mono', monospace;
+      font-size: 0.58rem;
+      letter-spacing: 0.15em;
+      color: var(--orange);
+      text-transform: uppercase;
+      margin-bottom: 0.4rem;
+    }
+
+    .org-node-name {
+      font-family: 'Barlow Condensed', sans-serif;
+      font-weight: 700;
+      font-size: 1rem;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      margin-bottom: 0.2rem;
+    }
+
+    .org-node-title {
+      font-size: 0.75rem;
+      color: var(--text-dim);
+      line-height: 1.4;
+    }
+
+    /* Branch lines drawn with CSS */
+    .org-branch {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      flex: 1;
+    }
+
+    .org-branch-group {
+      display: flex;
+      gap: 2rem;
+      justify-content: center;
+      width: 100%;
+      position: relative;
+    }
+
+    /* Horizontal connector bar above child nodes */
+    .h-bar {
+      position: absolute;
+      top: 0;
+      height: 1px;
+      background: var(--border-orange);
+    }
+
+    /* ── RISK ─────────────────────────────────────────── */
+    #risk {
+      background: var(--surface);
+      border-bottom: 1px solid var(--border);
+    }
+
+    .risk-intro {
+      max-width: 620px;
+      margin-bottom: 2.5rem;
+    }
+
+    .risk-intro p {
+      font-size: 1rem;
+      color: var(--text-dim);
+      line-height: 1.8;
+    }
+
+    .risk-table {
+      width: 100%;
+      border-collapse: collapse;
+      border: 1px solid var(--border);
+    }
+
+    .risk-table thead tr {
+      background: var(--surface-3);
+      border-bottom: 1px solid var(--border-orange);
+    }
+
+    .risk-table th {
+      font-family: 'Share Tech Mono', monospace;
+      font-size: 0.62rem;
+      letter-spacing: 0.18em;
+      text-transform: uppercase;
+      color: var(--orange);
+      padding: 1rem 1.4rem;
+      text-align: left;
+      font-weight: 400;
+    }
+
+    .risk-table tbody tr {
+      border-bottom: 1px solid var(--border);
+      transition: background 0.15s;
+    }
+
+    .risk-table tbody tr:last-child { border-bottom: none; }
+    .risk-table tbody tr:hover { background: var(--surface-2); }
+
+    .risk-table td {
+      padding: 1.1rem 1.4rem;
+      vertical-align: top;
+      color: var(--text-dim);
+      font-size: 0.9rem;
+      line-height: 1.55;
+    }
+
+    .risk-table td:first-child {
+      color: var(--text);
+      font-weight: 500;
+      font-size: 0.92rem;
+    }
+
+    .risk-pill {
+      display: inline-block;
+      font-family: 'Share Tech Mono', monospace;
+      font-size: 0.6rem;
+      letter-spacing: 0.1em;
+      padding: 0.2rem 0.6rem;
+      border-radius: 2px;
+      text-transform: uppercase;
+      font-weight: 400;
+    }
+
+    .risk-high    { background: rgba(239,68,68,0.15);  color: #f87171; }
+    .risk-medium  { background: rgba(251,146,60,0.15); color: #fb923c; }
+    .risk-low     { background: rgba(74,222,128,0.15); color: #4ade80; }
+
+    /* ── PAPER LINK ───────────────────────────────────── */
+    #paper {
+      background: var(--black);
+    }
+
+    .paper-block {
+      border: 1px solid var(--border-orange);
+      background: var(--orange-dim);
+      padding: 3.5rem 3rem;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 3rem;
+    }
+
+    .paper-left h2 {
+      font-family: 'Barlow Condensed', sans-serif;
+      font-weight: 800;
+      font-size: clamp(1.6rem, 3vw, 2.4rem);
+      text-transform: uppercase;
+      letter-spacing: 0.03em;
+      margin-bottom: 0.6rem;
+    }
+
+    .paper-left p {
+      font-size: 0.95rem;
+      color: var(--text-dim);
+      line-height: 1.7;
+      max-width: 520px;
+    }
+
+    .paper-btn {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+      background: var(--orange);
+      color: #fff;
+      text-decoration: none;
+      padding: 1rem 2rem;
+      font-family: 'Barlow Condensed', sans-serif;
+      font-weight: 700;
+      font-size: 0.9rem;
+      letter-spacing: 0.14em;
+      text-transform: uppercase;
+      white-space: nowrap;
+      transition: background 0.2s, transform 0.2s;
+      flex-shrink: 0;
+    }
+
+    .paper-btn:hover {
+      background: #d44f0a;
+      transform: translateY(-1px);
+    }
+
+    .paper-btn svg {
+      width: 18px;
+      height: 18px;
+      fill: none;
+      stroke: #fff;
+      stroke-width: 1.5;
+      stroke-linecap: round;
+      stroke-linejoin: round;
+    }
+
+    /* ── FOOTER ───────────────────────────────────────── */
+    footer {
+      background: var(--surface);
+      border-top: 1px solid var(--border);
+      padding: 2.8rem 0;
+    }
+
+    .footer-inner {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      flex-wrap: wrap;
+      gap: 1.5rem;
+    }
+
+    .footer-left { display: flex; align-items: center; gap: 1.2rem; }
+    .footer-icon { height: 28px; width: auto; opacity: 0.6; }
+
+    .footer-text {
+      font-family: 'Share Tech Mono', monospace;
+      font-size: 0.7rem;
+      letter-spacing: 0.12em;
+      color: var(--text-dimmer);
+      line-height: 1.7;
+    }
+
+    .footer-text strong { color: var(--text-dim); font-weight: 400; }
+
+    .footer-right { display: flex; align-items: center; gap: 2rem; }
+
+    .footer-link {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      font-family: 'Barlow Condensed', sans-serif;
+      font-weight: 600;
+      font-size: 0.78rem;
+      letter-spacing: 0.14em;
+      text-transform: uppercase;
+      color: var(--text-dim);
+      text-decoration: none;
+      transition: color 0.2s;
+    }
+
+    .footer-link:hover { color: var(--orange); }
+    .footer-link svg { width: 16px; height: 16px; fill: currentColor; }
+
+    /* ── ANIMATIONS ───────────────────────────────────── */
+    .fade-in {
+      opacity: 0;
+      transform: translateY(20px);
+      transition: opacity 0.6s ease, transform 0.6s ease;
+    }
+
+    .fade-in.visible {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  </style>
+</head>
+<body>
+
+<!-- ── NAV ──────────────────────────────────────────────── -->
+<nav>
+  <a href="index.html">
+    <img src="icon.svg" alt="DCEF" class="nav-icon">
+  </a>
+  <ul class="nav-links">
+    <li><a href="framework.html" class="active">Framework</a></li>
+    <li><a href="research.html">Research</a></li>
+    <li><a href="data.html">Data</a></li>
+    <li><a href="tools.html">Tools</a></li>
+    <li><a href="references.html">References</a></li>
+  </ul>
+</nav>
+
+<!-- ── PAGE HERO ─────────────────────────────────────────── -->
+<div class="page-hero">
+  <div class="container">
+    <div class="breadcrumb">
+      <a href="index.html">DCEF</a> / Framework
+    </div>
+    <h1>Systems Engineering<br><span>Framework</span></h1>
+    <p class="lead">A standardized, tiered methodology for federated counter-UAS test and evaluation. This section covers project scope, the three-tier accuracy structure, data schema, evaluation team structure, and risk posture.</p>
+  </div>
+</div>
+
+<!-- ── PROJECT OVERVIEW ──────────────────────────────────── -->
+<section id="overview">
+  <div class="container">
+    <div class="overview-grid">
+
+      <div class="overview-text fade-in">
+        <p class="section-label">Project Overview</p>
+        <div class="section-title">Why DCEF Exists</div>
+        <p>Counter-UAS systems are being fielded, evaluated, and procured across the United States at a pace that has outrun the methodology used to assess them. Range facilities, mobile evaluation teams, and government programs each generate their own test data — but without a shared standard for what that data means or how it was collected, no two reports can be meaningfully compared.</p>
+        <p>DCEF addresses this gap through a single, federated methodology anchored in onboard drone telemetry. By treating the flight controller's own logs — PX4 ULog and MAVLink tlog files from Pixhawk-based aircraft — as calibrated ground truth, DCEF creates a reference dataset that is independent of any specific sensor system, range facility, or vendor.</p>
+        <p>That ground truth is then correlated against the outputs of the counter-UAS system under test: radar tracks, optical detections, and acoustic signatures. The result is a standardized, reproducible evaluation record that can be compared across sites, reused across time, and cited in acquisition decisions.</p>
+      </div>
+
+      <div class="overview-stats fade-in">
+        <div class="stat-row">
+          <div class="stat-num">3</div>
+          <div class="stat-detail">
+            <strong>Accuracy Tiers</strong>
+            <span>Scalable from mass vendor screening to high-fidelity kinetic defeat evaluation, each with defined CEP thresholds and hardware requirements.</span>
+          </div>
+        </div>
+        <div class="stat-row">
+          <div class="stat-num">1</div>
+          <div class="stat-detail">
+            <strong>Common Data Schema</strong>
+            <span>A single standardized field set shared across all tiers and all sensor modalities — radar, optical, and acoustic — enabling direct cross-site comparison.</span>
+          </div>
+        </div>
+        <div class="stat-row">
+          <div class="stat-num">4</div>
+          <div class="stat-detail">
+            <strong>Visualization Outputs</strong>
+            <span>KML overlays, 2D position error scatter plots, polar directional bias plots, and range-binned probability of detection curves — all generated from the same correlated dataset.</span>
+          </div>
+        </div>
+        <div class="stat-row">
+          <div class="stat-num">50+</div>
+          <div class="stat-detail">
+            <strong>Hz Telemetry Rate</strong>
+            <span>Flight controller logs at 50–200 Hz, providing sub-centimeter position resolution at Tier 3 — far exceeding what external optical or radar tracking can achieve at range.</span>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</section>
+
+<!-- ── SCOPE ──────────────────────────────────────────────── -->
+<section id="scope">
+  <div class="container">
+    <p class="section-label">Scope &amp; Boundaries</p>
+    <div class="section-title">What DCEF Covers</div>
+
+    <div class="scope-grid fade-in">
+      <div class="scope-col">
+        <div class="scope-col-header">
+          <div class="scope-dot in"></div>
+          <h3>In Scope</h3>
+        </div>
+        <ul class="scope-items">
+          <li>Detection and identification performance evaluation of C-UAS sensor systems against small UAS threats</li>
+          <li>Onboard telemetry capture and standardization from Pixhawk-based flight controllers (PX4 ULog, MAVLink tlog)</li>
+          <li>Correlation of telemetry ground truth against radar, optical, and acoustic sensor outputs</li>
+          <li>Tiered positional accuracy requirements (Tier 1 GNSS through Tier 3 RTK with fixed base station)</li>
+          <li>Standardized data schema, time-synchronization protocol, and analysis pipeline</li>
+          <li>Synthetic example datasets and open-source Python toolchain for replication</li>
+          <li>Federated evaluation records suitable for cross-site and cross-vendor comparison</li>
+        </ul>
+      </div>
+
+      <div class="scope-col" style="background: var(--surface-2);">
+        <div class="scope-col-header">
+          <div class="scope-dot out"></div>
+          <h3>Out of Scope (Primary)</h3>
+        </div>
+        <ul class="scope-items">
+          <li>Kinetic effector defeat confirmation — DCEF records position truth for defeat geometry but does not adjudicate lethal outcomes</li>
+          <li>RF spectrum characterization as a primary deliverable — RF effects are captured incidentally through telemetry anomalies</li>
+          <li>Classified or export-controlled system performance data — all DCEF outputs are designed for public release</li>
+          <li>Prescriptive threat flight profiles — DCEF defines data standards, not operational tactics</li>
+          <li>Real-time battle management or command-and-control integration</li>
+        </ul>
+
+        <div class="scope-note">
+          <strong style="color: var(--orange); font-family: 'Barlow Condensed', sans-serif; font-size: 1rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.06em;">Note on Non-Kinetic Effects</strong><br><br>
+          While RF jamming and GPS spoofing characterization are not primary DCEF deliverables, the telemetry record captures them as emergent data. When a jammer is activated, ULog and MAVLink logs surface packet loss rates, GCS disconnection events, and position drift in real time — without additional instrumentation. This data can be reported as a secondary output of any DCEF evaluation run.
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ── THREE-TIER STRUCTURE ──────────────────────────────── -->
+<section id="tiers">
+  <div class="container">
+    <p class="section-label">Accuracy Structure</p>
+    <div class="section-title">Three-Tier Framework</div>
+
+    <div class="tier-blocks fade-in">
+
+      <!-- TIER 1 -->
+      <div class="tier-block">
+        <div class="tier-id">
+          <div class="tier-tag">TIER 01</div>
+          <div class="tier-cep-big">≤3m</div>
+          <div class="tier-cep-unit">CEP</div>
+        </div>
+        <div class="tier-cell">
+          <div class="tier-cell-label">Classification</div>
+          <div class="tier-cell-title">Standard GNSS</div>
+          <p>Commercial off-the-shelf GPS positioning using the flight controller's onboard GNSS receiver. No additional ground infrastructure required.</p>
+          <span class="tier-hardware-tag">Pixhawk GNSS · No base station</span>
+        </div>
+        <div class="tier-cell">
+          <div class="tier-cell-label">Primary Use Case</div>
+          <div class="tier-cell-title">Mass Vendor Screening</div>
+          <p>Go/no-go detection evaluation at scale. Suitable for initial capability assessment across large vendor pools where absolute positional fidelity is secondary to detection rate.</p>
+        </div>
+        <div class="tier-cell">
+          <div class="tier-cell-label">Cost Rationale</div>
+          <div class="tier-cell-title">Lowest Barrier to Entry</div>
+          <p>No additional hardware investment beyond standard flight operations equipment. Enables broad participation across test sites without RTK infrastructure overhead.</p>
+        </div>
+      </div>
+
+      <!-- TIER 2 -->
+      <div class="tier-block">
+        <div class="tier-id">
+          <div class="tier-tag">TIER 02</div>
+          <div class="tier-cep-big">≤30cm</div>
+          <div class="tier-cep-unit">CEP</div>
+        </div>
+        <div class="tier-cell">
+          <div class="tier-cell-label">Classification</div>
+          <div class="tier-cell-title">Entry-Level RTK</div>
+          <p>Real-time kinematic positioning using a rover-only RTK receiver without a fixed base station. Network RTK or CORS corrections accepted.</p>
+          <span class="tier-hardware-tag">RTK Rover · CORS / NTRIP corrections</span>
+        </div>
+        <div class="tier-cell">
+          <div class="tier-cell-label">Primary Use Case</div>
+          <div class="tier-cell-title">Comparative Analysis</div>
+          <p>Meaningful side-by-side performance comparison between sensor systems and vendors. Sufficient positional fidelity to distinguish sensor track bias from true detection error.</p>
+        </div>
+        <div class="tier-cell">
+          <div class="tier-cell-label">Cost Rationale</div>
+          <div class="tier-cell-title">Mid-Tier Investment</div>
+          <p>Moderate hardware cost with no fixed base station installation. Significant accuracy improvement over Tier 1 enables vendor differentiation that justifies additional outlay.</p>
+        </div>
+      </div>
+
+      <!-- TIER 3 -->
+      <div class="tier-block">
+        <div class="tier-id">
+          <div class="tier-tag">TIER 03</div>
+          <div class="tier-cep-big">≤5cm</div>
+          <div class="tier-cep-unit">CEP</div>
+        </div>
+        <div class="tier-cell">
+          <div class="tier-cell-label">Classification</div>
+          <div class="tier-cell-title">Full RTK + Fixed Base</div>
+          <p>Dual-frequency RTK with a surveyed fixed base station on-site. u-blox F9P recommended for both rover and base. Post-processed kinematic (PPK) supported.</p>
+          <span class="tier-hardware-tag">u-blox F9P · Fixed base station</span>
+        </div>
+        <div class="tier-cell">
+          <div class="tier-cell-label">Primary Use Case</div>
+          <div class="tier-cell-title">Kinetic Defeat Evaluation</div>
+          <p>High-fidelity position truth for kinetic effector assessment. At ≤5cm CEP, the ground truth record is precise enough to adjudicate near-miss geometry and defeat envelopes.</p>
+        </div>
+        <div class="tier-cell">
+          <div class="tier-cell-label">Cost Rationale</div>
+          <div class="tier-cell-title">Ammunition Cost Reduction</div>
+          <p>Tighter positional CEP directly reduces rounds expended per conclusive evaluation run. For kinetic effector programs, the hardware investment is recovered through reduced ammunition expenditure across a test series.</p>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</section>
+
+<!-- ── DATA SCHEMA ────────────────────────────────────────── -->
+<section id="schema">
+  <div class="container">
+    <p class="section-label">Data Standard</p>
+    <div class="section-title">Common Data Schema</div>
+    <div class="schema-intro">
+      <p>Every DCEF evaluation record — regardless of tier, site, or sensor type — conforms to the following field set. Fields are sourced from either onboard telemetry, the sensor system under test, or derived through the correlation pipeline. This schema is the foundation of cross-site comparability.</p>
+    </div>
+
+    <table class="schema-table fade-in">
+      <thead>
+        <tr>
+          <th>Field</th>
+          <th>Type</th>
+          <th>Source</th>
+          <th>Description</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td>timestamp_utc</td>
+          <td>datetime64</td>
+          <td><span class="badge badge-telem">Telemetry</span></td>
+          <td>UTC timestamp synchronized to GPS time from flight controller. Primary time axis for all correlation operations.</td>
+        </tr>
+        <tr>
+          <td>lat_truth</td>
+          <td>float64</td>
+          <td><span class="badge badge-telem">Telemetry</span></td>
+          <td>Ground truth latitude from onboard GNSS / RTK receiver, in decimal degrees WGS84.</td>
+        </tr>
+        <tr>
+          <td>lon_truth</td>
+          <td>float64</td>
+          <td><span class="badge badge-telem">Telemetry</span></td>
+          <td>Ground truth longitude from onboard GNSS / RTK receiver, in decimal degrees WGS84.</td>
+        </tr>
+        <tr>
+          <td>alt_agl_m</td>
+          <td>float32</td>
+          <td><span class="badge badge-telem">Telemetry</span></td>
+          <td>Altitude above ground level in meters, derived from barometric and GNSS fusion in the flight controller EKF.</td>
+        </tr>
+        <tr>
+          <td>hdg_deg</td>
+          <td>float32</td>
+          <td><span class="badge badge-telem">Telemetry</span></td>
+          <td>Vehicle heading in degrees true. Used for polar bias plot orientation.</td>
+        </tr>
+        <tr>
+          <td>gnd_speed_ms</td>
+          <td>float32</td>
+          <td><span class="badge badge-telem">Telemetry</span></td>
+          <td>Ground speed in meters per second. Used for range-rate binning in detection performance analysis.</td>
+        </tr>
+        <tr>
+          <td>sensor_lat</td>
+          <td>float64</td>
+          <td><span class="badge badge-sensor">Sensor</span></td>
+          <td>Reported target latitude from the C-UAS sensor under test, in decimal degrees WGS84.</td>
+        </tr>
+        <tr>
+          <td>sensor_lon</td>
+          <td>float64</td>
+          <td><span class="badge badge-sensor">Sensor</span></td>
+          <td>Reported target longitude from the C-UAS sensor under test, in decimal degrees WGS84.</td>
+        </tr>
+        <tr>
+          <td>sensor_type</td>
+          <td>string</td>
+          <td><span class="badge badge-sensor">Sensor</span></td>
+          <td>Modality identifier: RADAR, OPTICAL, ACOUSTIC, or RF. Enables multi-modal fusion analysis.</td>
+        </tr>
+        <tr>
+          <td>detection_flag</td>
+          <td>bool</td>
+          <td><span class="badge badge-sensor">Sensor</span></td>
+          <td>Boolean detection event flag from the sensor system. True = sensor declared detection at this timestamp.</td>
+        </tr>
+        <tr>
+          <td>range_m</td>
+          <td>float32</td>
+          <td><span class="badge badge-derived">Derived</span></td>
+          <td>Slant range in meters between sensor origin and ground truth position. Computed from truth lat/lon and sensor position.</td>
+        </tr>
+        <tr>
+          <td>pos_error_m</td>
+          <td>float32</td>
+          <td><span class="badge badge-derived">Derived</span></td>
+          <td>Horizontal position error in meters: geodesic distance between sensor_lat/lon and truth lat/lon at each timestamp.</td>
+        </tr>
+        <tr>
+          <td>tier</td>
+          <td>int8</td>
+          <td><span class="badge badge-derived">Derived</span></td>
+          <td>DCEF accuracy tier (1, 2, or 3) applied during this evaluation run. Governs CEP threshold for pass/fail assessment.</td>
+        </tr>
+        <tr>
+          <td>rf_packet_loss_pct</td>
+          <td>float32</td>
+          <td><span class="badge badge-telem">Telemetry</span></td>
+          <td>Percentage of GCS telemetry packets lost during the evaluation interval. Non-zero values indicate RF interference or jamming events.</td>
+        </tr>
+        <tr>
+          <td>site_id</td>
+          <td>string</td>
+          <td><span class="badge badge-derived">Derived</span></td>
+          <td>Unique site identifier for federated record linkage. Enables cross-site dataset aggregation without merging raw files.</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+</section>
+
+<!-- ── ORG CHART ──────────────────────────────────────────── -->
+<section id="org">
+  <div class="container">
+    <p class="section-label">Team Structure</p>
+    <div class="section-title">Notional Evaluation Team</div>
+
+    <div class="org-wrap fade-in">
+      <div class="org-chart">
+
+        <!-- Level 0: Program Co-Leads -->
+        <div class="org-row" style="gap: 3rem;">
+          <div class="org-node primary">
+            <div class="org-node-role">Framework Lead</div>
+            <div class="org-node-name">Nick Smock</div>
+            <div class="org-node-title">Methodology, Standards &amp; Threat Emulation</div>
+          </div>
+          <div class="org-node primary">
+            <div class="org-node-role">Data Systems Lead</div>
+            <div class="org-node-name">Dave Amici</div>
+            <div class="org-node-title">Data Schema, Pipeline &amp; Analysis</div>
+          </div>
+        </div>
+
+        <!-- Connector down from co-leads -->
+        <div style="display:flex; width:100%; justify-content:center; gap:3rem;">
+          <div class="org-connector-v tall" style="flex:0 0 1px; margin:0;"></div>
+          <div class="org-connector-v tall" style="flex:0 0 1px; margin:0;"></div>
+        </div>
+
+        <!-- Level 1: Functional Leads -->
+        <div class="org-row" style="gap: 1.5rem; width: 100%;">
+
+          <!-- Left branch under Framework Lead -->
+          <div style="display:flex; flex-direction:column; align-items:center; flex:1;">
+            <div style="display:flex; gap: 1.5rem; justify-content:center;">
+              <div style="display:flex; flex-direction:column; align-items:center;">
+                <div class="org-connector-v short"></div>
+                <div class="org-node secondary">
+                  <div class="org-node-role">Operations</div>
+                  <div class="org-node-name">Test Director</div>
+                  <div class="org-node-title">Manages site execution, safety, and range coordination</div>
+                </div>
+              </div>
+              <div style="display:flex; flex-direction:column; align-items:center;">
+                <div class="org-connector-v short"></div>
+                <div class="org-node secondary">
+                  <div class="org-node-role">Threat Emulation</div>
+                  <div class="org-node-name">UAS Pilot</div>
+                  <div class="org-node-title">Executes defined flight profiles; operates Pixhawk-based aircraft</div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Right branch under Data Systems Lead -->
+          <div style="display:flex; flex-direction:column; align-items:center; flex:1;">
+            <div style="display:flex; gap: 1.5rem; justify-content:center;">
+              <div style="display:flex; flex-direction:column; align-items:center;">
+                <div class="org-connector-v short"></div>
+                <div class="org-node secondary">
+                  <div class="org-node-role">Integration</div>
+                  <div class="org-node-name">Sensor Analyst</div>
+                  <div class="org-node-title">Configures sensor data collection; validates schema compliance</div>
+                </div>
+              </div>
+              <div style="display:flex; flex-direction:column; align-items:center;">
+                <div class="org-connector-v short"></div>
+                <div class="org-node secondary">
+                  <div class="org-node-role">QA &amp; Records</div>
+                  <div class="org-node-name">Documentation Lead</div>
+                  <div class="org-node-title">Maintains evaluation records; produces standardized reports</div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+        </div>
+
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ── RISK ───────────────────────────────────────────────── -->
+<section id="risk">
+  <div class="container">
+    <p class="section-label">Risk Posture</p>
+    <div class="section-title">Top Program Risks</div>
+    <div class="risk-intro">
+      <p>The following risks represent the primary threats to DCEF evaluation fidelity and framework adoption. Each has been assessed for likelihood and consequence severity, with mitigations built into the framework design.</p>
+    </div>
+
+    <table class="risk-table fade-in">
+      <thead>
+        <tr>
+          <th>Risk</th>
+          <th>Likelihood</th>
+          <th>Consequence</th>
+          <th>Mitigation</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td>GNSS multipath or signal degradation at test site invalidates Tier 1/2 positional accuracy</td>
+          <td><span class="risk-pill risk-high">High</span></td>
+          <td><span class="risk-pill risk-high">High</span></td>
+          <td>Pre-survey site HDOP conditions; mandate HDOP &lt; 1.5 threshold in flight data before run acceptance. Tier 3 RTK base station mitigates at highest fidelity level.</td>
+        </tr>
+        <tr>
+          <td>Time synchronization drift between sensor output and telemetry log exceeds correlation tolerance</td>
+          <td><span class="risk-pill risk-medium">Medium</span></td>
+          <td><span class="risk-pill risk-high">High</span></td>
+          <td>Enforce GPS-disciplined NTP on all sensor recording systems. Define maximum allowable skew (±50ms) in schema specification; flag and exclude out-of-tolerance records.</td>
+        </tr>
+        <tr>
+          <td>Inconsistent sensor configuration across sites reduces cross-site data comparability</td>
+          <td><span class="risk-pill risk-high">High</span></td>
+          <td><span class="risk-pill risk-medium">Medium</span></td>
+          <td>DCEF schema mandates sensor_type and configuration metadata fields per record. Standardized pre-run checklist distributed to all participating sites.</td>
+        </tr>
+        <tr>
+          <td>Proprietary sensor output formats incompatible with DCEF CSV schema pipeline</td>
+          <td><span class="risk-pill risk-medium">Medium</span></td>
+          <td><span class="risk-pill risk-medium">Medium</span></td>
+          <td>Open-source Python adapter library provided in DCEF Tools section. Vendors required to map outputs to schema fields; unmappable fields excluded rather than force-fitted.</td>
+        </tr>
+        <tr>
+          <td>Weather or airspace restrictions limit test execution windows and reduce statistical sample size</td>
+          <td><span class="risk-pill risk-medium">Medium</span></td>
+          <td><span class="risk-pill risk-low">Low</span></td>
+          <td>DCEF defines minimum run counts per tier for statistically significant detection probability curves. Schedule buffer and alternate site provisions built into test planning template.</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+</section>
+
+<!-- ── PAPER LINK ─────────────────────────────────────────── -->
+<section id="paper">
+  <div class="container">
+    <div class="paper-block fade-in">
+      <div class="paper-left">
+        <p class="section-label" style="margin-bottom: 0.8rem;">Full Document</p>
+        <h2>Read the Systems Engineering Plan</h2>
+        <p>The complete DCEF Systems Engineering Plan documents the full methodology, requirements, verification approach, and analytical framework. Available as a PDF — opens directly in browser.</p>
+      </div>
+      <a href="dcef-sep.pdf" target="_blank" class="paper-btn">
+        <svg viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="12" y1="18" x2="12" y2="12"/><line x1="9" y1="15" x2="15" y2="15"/></svg>
+        Open SEP PDF
+      </a>
+    </div>
+  </div>
+</section>
+
+<!-- ── FOOTER ─────────────────────────────────────────────── -->
+<footer>
+  <div class="container">
+    <div class="footer-inner">
+      <div class="footer-left">
+        <img src="icon.svg" alt="DCEF" class="footer-icon">
+        <div class="footer-text">
+          <strong>DCEF — Distributed C-UAS Evaluation Framework</strong><br>
+          Wayne State University · Master of Science in Systems Engineering<br>
+          SYE 6942 Capstone Research Project
+        </div>
+      </div>
+      <div class="footer-right">
+        <a href="https://github.com/nick-smock/dcef" class="footer-link" target="_blank" rel="noopener">
+          <svg viewBox="0 0 24 24"><path d="M9 19c-5 1.5-5-2.5-7-3m14 6v-3.87a3.37 3.37 0 0 0-.94-2.61c3.14-.35 6.44-1.54 6.44-7A5.44 5.44 0 0 0 20 4.77 5.07 5.07 0 0 0 19.91 1S18.73.65 16 2.48a13.38 13.38 0 0 0-7 0C6.27.65 5.09 1 5.09 1A5.07 5.07 0 0 0 5 4.77a5.44 5.44 0 0 0-1.5 3.78c0 5.42 3.3 6.61 6.44 7A3.37 3.37 0 0 0 9 18.13V22"/></svg>
+          GitHub
+        </a>
+      </div>
+    </div>
+  </div>
+</footer>
+
+<!-- ── SCROLL ANIMATIONS ──────────────────────────────────── -->
+<script>
+  const observer = new IntersectionObserver((entries) => {
+    entries.forEach(e => {
+      if (e.isIntersecting) {
+        e.target.classList.add('visible');
+        observer.unobserve(e.target);
+      }
+    });
+  }, { threshold: 0.08 });
+
+  document.querySelectorAll('.fade-in').forEach(el => observer.observe(el));
+</script>
+
+</body>
+</html>
