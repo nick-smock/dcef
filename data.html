@@ -1,0 +1,635 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Data — DCEF</title>
+  <meta name="description" content="DCEF synthetic datasets — standardized CSV files for Scenario Alpha, available for download and replication.">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@400;600;700;800&family=Barlow:wght@300;400;500;600&family=Share+Tech+Mono&display=swap" rel="stylesheet">
+
+  <style>
+    :root {
+      --orange: #f26115;
+      --orange-dim: rgba(242, 97, 21, 0.12);
+      --orange-mid: rgba(242, 97, 21, 0.4);
+      --black: #060606;
+      --surface: #0e0e0e;
+      --surface-2: #161616;
+      --surface-3: #1c1c1c;
+      --border: rgba(255,255,255,0.07);
+      --border-orange: rgba(242,97,21,0.25);
+      --text: #f0f0f0;
+      --text-dim: #888;
+      --text-dimmer: #444;
+      --blue: #4a9eff;
+      --purple: #a78bfa;
+      --green: #4ade80;
+    }
+
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    html { scroll-behavior: smooth; }
+    body {
+      background: var(--black); color: var(--text);
+      font-family: 'Barlow', sans-serif; font-weight: 400; overflow-x: hidden;
+    }
+
+    /* ── NAV ──────────────────────────────────────────── */
+    nav {
+      position: fixed; top: 0; left: 0; right: 0; z-index: 100;
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 0 2.5rem; height: 64px;
+      background: rgba(6,6,6,0.92); backdrop-filter: blur(12px);
+      border-bottom: 1px solid var(--border);
+    }
+    .nav-icon { height: 104px; width: auto; opacity: 0.95; }
+    .nav-links { display: flex; gap: 2.4rem; list-style: none; }
+    .nav-links a {
+      font-family: 'Barlow Condensed', sans-serif; font-weight: 600;
+      font-size: 0.78rem; letter-spacing: 0.12em; text-transform: uppercase;
+      color: var(--text-dim); text-decoration: none; transition: color 0.2s;
+    }
+    .nav-links a:hover, .nav-links a.active { color: var(--orange); }
+
+    /* ── PAGE HERO ────────────────────────────────────── */
+    .page-hero {
+      padding: 140px 0 80px; background: var(--surface);
+      border-bottom: 1px solid var(--border); position: relative; overflow: hidden;
+    }
+    .page-hero::before {
+      content: 'DATA'; position: absolute; right: -1rem; top: 50%; transform: translateY(-50%);
+      font-family: 'Barlow Condensed', sans-serif; font-weight: 800;
+      font-size: clamp(8rem, 20vw, 18rem); color: rgba(255,255,255,0.025);
+      letter-spacing: 0.05em; white-space: nowrap; pointer-events: none; line-height: 1;
+    }
+    .page-hero .container { position: relative; z-index: 1; }
+    .breadcrumb {
+      font-family: 'Share Tech Mono', monospace; font-size: 0.68rem;
+      letter-spacing: 0.2em; color: var(--text-dimmer); text-transform: uppercase; margin-bottom: 1.4rem;
+    }
+    .breadcrumb a { color: var(--orange); text-decoration: none; }
+    .page-hero h1 {
+      font-family: 'Barlow Condensed', sans-serif; font-weight: 800;
+      font-size: clamp(3rem, 6vw, 5.5rem); text-transform: uppercase;
+      letter-spacing: 0.03em; line-height: 0.95; margin-bottom: 1.5rem;
+    }
+    .page-hero h1 span { color: var(--orange); }
+    .page-hero .lead {
+      font-size: 1.1rem; color: var(--text-dim); max-width: 620px; line-height: 1.75;
+    }
+
+    /* ── SHARED ───────────────────────────────────────── */
+    .container { max-width: 1160px; margin: 0 auto; padding: 0 2.5rem; }
+    section { padding: 6rem 0; }
+    .section-label {
+      font-family: 'Share Tech Mono', monospace; font-size: 0.68rem;
+      letter-spacing: 0.25em; color: var(--orange); text-transform: uppercase;
+      margin-bottom: 1rem; display: flex; align-items: center; gap: 0.75rem;
+    }
+    .section-label::before { content: ''; display: block; width: 24px; height: 1px; background: var(--orange); }
+    .section-title {
+      font-family: 'Barlow Condensed', sans-serif; font-weight: 800;
+      font-size: clamp(1.8rem, 3vw, 2.8rem); text-transform: uppercase;
+      letter-spacing: 0.03em; margin-bottom: 2rem; line-height: 1.05;
+    }
+
+    /* ── ABOUT ────────────────────────────────────────── */
+    #about { background: var(--black); border-bottom: 1px solid var(--border); }
+    .about-grid {
+      display: grid; grid-template-columns: 1fr 1fr; gap: 5rem; align-items: start;
+    }
+    .about-text p {
+      font-size: 1.05rem; line-height: 1.85; color: #aaa; margin-bottom: 1.2rem;
+    }
+    .about-text p:last-child { margin-bottom: 0; }
+
+    .about-specs {
+      display: flex; flex-direction: column; gap: 1px;
+      background: var(--border); border: 1px solid var(--border);
+    }
+    .spec-row {
+      background: var(--surface); padding: 1.1rem 1.6rem;
+      display: flex; justify-content: space-between; align-items: center;
+      transition: background 0.2s;
+    }
+    .spec-row:hover { background: var(--surface-2); }
+    .spec-key {
+      font-family: 'Share Tech Mono', monospace; font-size: 0.7rem;
+      letter-spacing: 0.12em; color: var(--text-dim); text-transform: uppercase;
+    }
+    .spec-val {
+      font-family: 'Barlow Condensed', sans-serif; font-weight: 700;
+      font-size: 1rem; text-transform: uppercase; letter-spacing: 0.05em; color: var(--text);
+    }
+    .spec-val.orange { color: var(--orange); }
+
+    /* ── CATALOG ──────────────────────────────────────── */
+    #catalog { background: var(--surface); border-bottom: 1px solid var(--border); }
+    .catalog-grid {
+      display: grid; grid-template-columns: repeat(2, 1fr); gap: 1px;
+      background: var(--border); border: 1px solid var(--border);
+    }
+    .dataset-card {
+      background: var(--surface); padding: 2.4rem 2.2rem;
+      display: flex; flex-direction: column; gap: 1rem;
+      position: relative; overflow: hidden; transition: background 0.2s;
+      text-decoration: none; color: var(--text);
+    }
+    .dataset-card::before {
+      content: ''; position: absolute; top: 0; left: 0; right: 0; height: 2px;
+      background: var(--orange); transform: scaleX(0); transform-origin: left; transition: transform 0.35s;
+    }
+    .dataset-card:hover { background: var(--surface-2); }
+    .dataset-card:hover::before { transform: scaleX(1); }
+
+    .card-top { display: flex; justify-content: space-between; align-items: flex-start; }
+    .file-icon {
+      width: 40px; height: 48px; position: relative;
+      display: flex; align-items: center; justify-content: center;
+    }
+    .file-icon svg { width: 100%; height: 100%; fill: none; stroke: var(--orange); stroke-width: 1.2; stroke-linecap: round; stroke-linejoin: round; }
+
+    .card-meta { text-align: right; }
+    .card-rows {
+      font-family: 'Barlow Condensed', sans-serif; font-weight: 800;
+      font-size: 1.8rem; color: var(--orange); line-height: 1;
+    }
+    .card-rows-label {
+      font-family: 'Share Tech Mono', monospace; font-size: 0.6rem;
+      letter-spacing: 0.15em; color: var(--text-dimmer); text-transform: uppercase;
+    }
+
+    .card-filename {
+      font-family: 'Share Tech Mono', monospace; font-size: 0.75rem;
+      letter-spacing: 0.08em; color: var(--orange); word-break: break-all;
+    }
+    .card-title {
+      font-family: 'Barlow Condensed', sans-serif; font-weight: 700;
+      font-size: 1.15rem; text-transform: uppercase; letter-spacing: 0.06em;
+    }
+    .card-desc { font-size: 0.88rem; color: var(--text-dim); line-height: 1.6; flex-grow: 1; }
+
+    .card-fields {
+      display: flex; flex-wrap: wrap; gap: 0.4rem; margin-top: 0.4rem;
+    }
+    .field-tag {
+      font-family: 'Share Tech Mono', monospace; font-size: 0.58rem;
+      letter-spacing: 0.08em; color: var(--text-dimmer);
+      border: 1px solid var(--text-dimmer); padding: 0.15rem 0.45rem;
+    }
+
+    .card-dl {
+      display: flex; align-items: center; gap: 0.5rem; margin-top: 0.5rem;
+      font-family: 'Barlow Condensed', sans-serif; font-weight: 700;
+      font-size: 0.78rem; letter-spacing: 0.12em; text-transform: uppercase; color: var(--orange);
+    }
+    .card-dl svg { width: 14px; height: 14px; fill: none; stroke: var(--orange); stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
+
+    /* ── PREVIEW TABLE ────────────────────────────────── */
+    #preview { background: var(--black); border-bottom: 1px solid var(--border); }
+    .preview-header {
+      display: flex; justify-content: space-between; align-items: flex-end;
+      margin-bottom: 1.5rem; flex-wrap: wrap; gap: 1rem;
+    }
+    .preview-note {
+      font-family: 'Share Tech Mono', monospace; font-size: 0.68rem;
+      letter-spacing: 0.12em; color: var(--text-dimmer);
+    }
+    .preview-note span { color: var(--orange); }
+
+    .table-scroll { overflow-x: auto; border: 1px solid var(--border); }
+
+    .preview-table {
+      width: 100%; border-collapse: collapse; font-size: 0.82rem; white-space: nowrap;
+    }
+    .preview-table thead tr {
+      background: var(--surface-3); border-bottom: 1px solid var(--border-orange);
+    }
+    .preview-table th {
+      font-family: 'Share Tech Mono', monospace; font-size: 0.6rem; letter-spacing: 0.15em;
+      text-transform: uppercase; color: var(--orange); padding: 0.9rem 1.2rem;
+      text-align: left; font-weight: 400; cursor: default;
+    }
+    .preview-table tbody tr {
+      border-bottom: 1px solid var(--border); transition: background 0.15s;
+    }
+    .preview-table tbody tr:last-child { border-bottom: none; }
+    .preview-table tbody tr:hover { background: var(--surface-2); }
+    .preview-table td {
+      padding: 0.75rem 1.2rem; color: var(--text-dim); vertical-align: middle;
+    }
+    .preview-table td.mono {
+      font-family: 'Share Tech Mono', monospace; font-size: 0.75rem;
+    }
+    .preview-table td.num { color: var(--text); font-family: 'Share Tech Mono', monospace; font-size: 0.75rem; }
+    .preview-table td.orange { color: var(--orange); font-family: 'Share Tech Mono', monospace; font-size: 0.75rem; }
+
+    .det-true {
+      display: inline-block; font-family: 'Share Tech Mono', monospace; font-size: 0.6rem;
+      letter-spacing: 0.1em; padding: 0.15rem 0.5rem;
+      background: rgba(74,222,128,0.12); color: #4ade80; border: 1px solid rgba(74,222,128,0.3);
+    }
+    .det-false {
+      display: inline-block; font-family: 'Share Tech Mono', monospace; font-size: 0.6rem;
+      letter-spacing: 0.1em; padding: 0.15rem 0.5rem;
+      background: rgba(255,255,255,0.04); color: var(--text-dimmer); border: 1px solid var(--border);
+    }
+
+    .more-rows {
+      text-align: center; padding: 1rem;
+      font-family: 'Share Tech Mono', monospace; font-size: 0.68rem;
+      letter-spacing: 0.15em; color: var(--text-dimmer);
+      background: var(--surface); border-top: 1px solid var(--border);
+    }
+
+    /* ── CODE SECTION ─────────────────────────────────── */
+    #howto { background: var(--surface); border-bottom: 1px solid var(--border); }
+    .code-intro { max-width: 680px; margin-bottom: 2.5rem; }
+    .code-intro p { font-size: 1rem; color: var(--text-dim); line-height: 1.8; }
+
+    .code-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem; }
+
+    .code-block {
+      background: var(--surface-3); border: 1px solid var(--border);
+      overflow: hidden;
+    }
+    .code-header {
+      display: flex; justify-content: space-between; align-items: center;
+      padding: 0.75rem 1.2rem; background: var(--surface-2);
+      border-bottom: 1px solid var(--border);
+    }
+    .code-lang {
+      font-family: 'Share Tech Mono', monospace; font-size: 0.62rem;
+      letter-spacing: 0.15em; color: var(--orange); text-transform: uppercase;
+    }
+    .code-label {
+      font-family: 'Share Tech Mono', monospace; font-size: 0.62rem;
+      letter-spacing: 0.1em; color: var(--text-dimmer);
+    }
+    pre {
+      padding: 1.4rem 1.2rem; overflow-x: auto;
+      font-family: 'Share Tech Mono', monospace; font-size: 0.78rem;
+      line-height: 1.7; color: #ccc; margin: 0;
+    }
+    .kw  { color: #a78bfa; }
+    .fn  { color: var(--orange); }
+    .st  { color: #4ade80; }
+    .cm  { color: var(--text-dimmer); }
+    .nm  { color: var(--blue); }
+
+    /* ── FOOTER ───────────────────────────────────────── */
+    footer {
+      background: var(--surface); border-top: 1px solid var(--border); padding: 2.8rem 0;
+    }
+    .footer-inner { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 1.5rem; }
+    .footer-left { display: flex; align-items: center; gap: 1.2rem; }
+    .footer-icon { height: 28px; width: auto; opacity: 0.6; }
+    .footer-text { font-family: 'Share Tech Mono', monospace; font-size: 0.7rem; letter-spacing: 0.12em; color: var(--text-dimmer); line-height: 1.7; }
+    .footer-text strong { color: var(--text-dim); font-weight: 400; }
+    .footer-right { display: flex; align-items: center; gap: 2rem; }
+    .footer-link { display: flex; align-items: center; gap: 0.5rem; font-family: 'Barlow Condensed', sans-serif; font-weight: 600; font-size: 0.78rem; letter-spacing: 0.14em; text-transform: uppercase; color: var(--text-dim); text-decoration: none; transition: color 0.2s; }
+    .footer-link:hover { color: var(--orange); }
+    .footer-link svg { width: 16px; height: 16px; fill: currentColor; }
+
+    .fade-in { opacity: 0; transform: translateY(20px); transition: opacity 0.6s ease, transform 0.6s ease; }
+    .fade-in.visible { opacity: 1; transform: translateY(0); }
+  </style>
+</head>
+<body>
+
+<!-- ── NAV ──────────────────────────────────────────────── -->
+<nav>
+  <a href="index.html"><img src="icon.svg" alt="DCEF" class="nav-icon"></a>
+  <ul class="nav-links">
+    <li><a href="framework.html">Framework</a></li>
+    <li><a href="research.html">Research</a></li>
+    <li><a href="data.html" class="active">Data</a></li>
+    <li><a href="tools.html">Tools</a></li>
+    <li><a href="references.html">References</a></li>
+  </ul>
+</nav>
+
+<!-- ── PAGE HERO ─────────────────────────────────────────── -->
+<div class="page-hero">
+  <div class="container">
+    <div class="breadcrumb"><a href="index.html">DCEF</a> / Data</div>
+    <h1>Synthetic<br><span>Datasets</span></h1>
+    <p class="lead">Four standardized CSV files built from Scenario Alpha — a notional Tier 2 radar evaluation. All data is synthetic, purpose-built to demonstrate the DCEF schema and analysis pipeline. Download, replicate, and build on it.</p>
+  </div>
+</div>
+
+<!-- ── ABOUT ──────────────────────────────────────────────── -->
+<section id="about">
+  <div class="container">
+    <div class="about-grid">
+      <div class="about-text fade-in">
+        <p class="section-label">About the Data</p>
+        <div class="section-title">Built to Be Replicated</div>
+        <p>These datasets are synthetic — generated from first principles using realistic C-UAS evaluation parameters, not derived from any operational test record. Every value is constructed to behave the way real data would: position error grows with range, detection probability degrades at far range, and directional bias appears where terrain masking would realistically occur.</p>
+        <p>The data is built around Scenario Alpha: a notional Tier 2 radar evaluation at a fixed range facility, covering approach, hover, and orbit flight profiles between 300m and 600m slant range. The correlated dataset is the same source used to generate all four research visualizations — the scatter plot, polar plot, PoD curve, and track overlay are all derived from these 162 records.</p>
+        <p>The schema template CSV gives any evaluation team a clean starting point — load it, fill it with real data from their own test run, and the DCEF analysis pipeline accepts it without modification.</p>
+      </div>
+      <div class="fade-in">
+        <div class="about-specs">
+          <div class="spec-row"><span class="spec-key">Scenario</span><span class="spec-val">Alpha — Synthetic</span></div>
+          <div class="spec-row"><span class="spec-key">Sensor Type</span><span class="spec-val">Radar</span></div>
+          <div class="spec-row"><span class="spec-key">DCEF Tier</span><span class="spec-val orange">Tier 2 — Entry RTK</span></div>
+          <div class="spec-row"><span class="spec-key">CEP Applied</span><span class="spec-val orange">≤ 30cm</span></div>
+          <div class="spec-row"><span class="spec-key">Total Records</span><span class="spec-val">162</span></div>
+          <div class="spec-row"><span class="spec-key">Time Window</span><span class="spec-val">2 min 42 sec @ 1 Hz</span></div>
+          <div class="spec-row"><span class="spec-key">Range Band</span><span class="spec-val">300 – 600m Slant</span></div>
+          <div class="spec-row"><span class="spec-key">Flight Profiles</span><span class="spec-val">Approach · Hover · Orbit</span></div>
+          <div class="spec-row"><span class="spec-key">Mean Pos Error</span><span class="spec-val orange">4.84m</span></div>
+          <div class="spec-row"><span class="spec-key">Detection Rate</span><span class="spec-val orange">89.5%</span></div>
+          <div class="spec-row"><span class="spec-key">Schema Fields</span><span class="spec-val">15</span></div>
+          <div class="spec-row"><span class="spec-key">Site ID</span><span class="spec-val">SITE-ALPHA</span></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ── DATASET CATALOG ────────────────────────────────────── -->
+<section id="catalog">
+  <div class="container">
+    <p class="section-label">Downloads</p>
+    <div class="section-title">Dataset Catalog</div>
+    <div class="catalog-grid fade-in">
+
+      <!-- Correlated -->
+      <a href="scenario_alpha_correlated.csv" download class="dataset-card">
+        <div class="card-top">
+          <div class="file-icon">
+            <svg viewBox="0 0 40 48"><path d="M8 0h20l12 12v36H8z"/><path d="M28 0v12h12" stroke-linejoin="round"/><line x1="14" y1="22" x2="26" y2="22"/><line x1="14" y1="28" x2="26" y2="28"/><line x1="14" y1="34" x2="22" y2="34"/></svg>
+          </div>
+          <div class="card-meta">
+            <div class="card-rows">162</div>
+            <div class="card-rows-label">Records</div>
+          </div>
+        </div>
+        <div class="card-filename">scenario_alpha_correlated.csv</div>
+        <div class="card-title">Full Correlated Dataset</div>
+        <div class="card-desc">The complete DCEF evaluation record — telemetry ground truth and radar sensor output correlated and merged into a single file with all 15 schema fields populated. This is the primary analysis dataset used to generate all research visualizations.</div>
+        <div class="card-fields">
+          <span class="field-tag">timestamp_utc</span>
+          <span class="field-tag">lat/lon_truth</span>
+          <span class="field-tag">sensor_lat/lon</span>
+          <span class="field-tag">range_m</span>
+          <span class="field-tag">pos_error_m</span>
+          <span class="field-tag">detection_flag</span>
+          <span class="field-tag">rf_packet_loss_pct</span>
+          <span class="field-tag">+8 more</span>
+        </div>
+        <div class="card-dl">
+          <svg viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+          Download CSV
+        </div>
+      </a>
+
+      <!-- Telemetry -->
+      <a href="scenario_alpha_telemetry.csv" download class="dataset-card">
+        <div class="card-top">
+          <div class="file-icon">
+            <svg viewBox="0 0 40 48"><path d="M8 0h20l12 12v36H8z"/><path d="M28 0v12h12" stroke-linejoin="round"/><polyline points="14,30 20,22 26,30"/><line x1="20" y1="22" x2="20" y2="36"/></svg>
+          </div>
+          <div class="card-meta">
+            <div class="card-rows">162</div>
+            <div class="card-rows-label">Records</div>
+          </div>
+        </div>
+        <div class="card-filename">scenario_alpha_telemetry.csv</div>
+        <div class="card-title">Raw Telemetry</div>
+        <div class="card-desc">Onboard flight controller telemetry only — position, altitude, heading, ground speed, and RF link quality. Represents the output of pyulog extraction from a PX4 ULog file. Use this as a reference for building your own telemetry ingestion pipeline.</div>
+        <div class="card-fields">
+          <span class="field-tag">timestamp_utc</span>
+          <span class="field-tag">lat/lon_truth</span>
+          <span class="field-tag">alt_agl_m</span>
+          <span class="field-tag">hdg_deg</span>
+          <span class="field-tag">gnd_speed_ms</span>
+          <span class="field-tag">rf_packet_loss_pct</span>
+          <span class="field-tag">site_id</span>
+        </div>
+        <div class="card-dl">
+          <svg viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+          Download CSV
+        </div>
+      </a>
+
+      <!-- Sensor -->
+      <a href="scenario_alpha_sensor.csv" download class="dataset-card">
+        <div class="card-top">
+          <div class="file-icon">
+            <svg viewBox="0 0 40 48"><path d="M8 0h20l12 12v36H8z"/><path d="M28 0v12h12" stroke-linejoin="round"/><circle cx="20" cy="30" r="7"/><line x1="14" y1="24" x2="26" y2="36"/></svg>
+          </div>
+          <div class="card-meta">
+            <div class="card-rows">162</div>
+            <div class="card-rows-label">Records</div>
+          </div>
+        </div>
+        <div class="card-filename">scenario_alpha_sensor.csv</div>
+        <div class="card-title">Raw Sensor Output</div>
+        <div class="card-desc">Radar sensor track data before correlation — reported target positions, detection flags, sensor type identifier, and site ID. Represents the raw output that a C-UAS system under test would produce. Use this to test your own correlation pipeline against the known truth track.</div>
+        <div class="card-fields">
+          <span class="field-tag">timestamp_utc</span>
+          <span class="field-tag">sensor_lat</span>
+          <span class="field-tag">sensor_lon</span>
+          <span class="field-tag">sensor_type</span>
+          <span class="field-tag">detection_flag</span>
+          <span class="field-tag">site_id</span>
+        </div>
+        <div class="card-dl">
+          <svg viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+          Download CSV
+        </div>
+      </a>
+
+      <!-- Template -->
+      <a href="dcef_schema_template.csv" download class="dataset-card">
+        <div class="card-top">
+          <div class="file-icon">
+            <svg viewBox="0 0 40 48"><path d="M8 0h20l12 12v36H8z"/><path d="M28 0v12h12" stroke-linejoin="round"/><rect x="13" y="21" width="14" height="16" rx="1"/><line x1="16" y1="26" x2="24" y2="26"/><line x1="16" y1="30" x2="24" y2="30"/></svg>
+          </div>
+          <div class="card-meta">
+            <div class="card-rows">1</div>
+            <div class="card-rows-label">Template Row</div>
+          </div>
+        </div>
+        <div class="card-filename">dcef_schema_template.csv</div>
+        <div class="card-title">Schema Template</div>
+        <div class="card-desc">A blank DCEF schema CSV with all 15 field headers and inline field descriptions in the first data row. Download this as a starting point for any new evaluation site. Fill it with your own test data and it will be accepted by the DCEF analysis pipeline without modification.</div>
+        <div class="card-fields">
+          <span class="field-tag">All 15 fields</span>
+          <span class="field-tag">Type annotations</span>
+          <span class="field-tag">Inline descriptions</span>
+          <span class="field-tag">Pipeline-ready</span>
+        </div>
+        <div class="card-dl">
+          <svg viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+          Download CSV
+        </div>
+      </a>
+
+    </div>
+  </div>
+</section>
+
+<!-- ── LIVE PREVIEW ───────────────────────────────────────── -->
+<section id="preview">
+  <div class="container">
+    <div class="preview-header">
+      <div>
+        <p class="section-label">Live Preview</p>
+        <div class="section-title" style="margin-bottom:0">scenario_alpha_correlated.csv</div>
+      </div>
+      <div class="preview-note">Showing rows <span>1–10</span> of <span>162</span> · All 15 fields</div>
+    </div>
+
+    <div class="table-scroll fade-in">
+      <table class="preview-table">
+        <thead>
+          <tr>
+            <th>timestamp_utc</th>
+            <th>lat_truth</th>
+            <th>lon_truth</th>
+            <th>alt_agl_m</th>
+            <th>hdg_deg</th>
+            <th>spd_ms</th>
+            <th>range_m</th>
+            <th>pos_error_m</th>
+            <th>detection</th>
+            <th>rf_loss_%</th>
+            <th>tier</th>
+            <th>site_id</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr><td class="mono">2024-09-15 14:00:00</td><td class="num">35.120189</td><td class="num">-117.890662</td><td class="num">50.2</td><td class="num">226.9</td><td class="num">7.02</td><td class="orange">599.4</td><td class="num">6.38</td><td><span class="det-true">True</span></td><td class="num">0.00</td><td class="num">2</td><td class="mono">SITE-ALPHA</td></tr>
+          <tr><td class="mono">2024-09-15 14:00:01</td><td class="num">35.120220</td><td class="num">-117.890618</td><td class="num">49.9</td><td class="num">225.0</td><td class="num">7.57</td><td class="orange">594.2</td><td class="num">10.49</td><td><span class="det-false">False</span></td><td class="num">0.00</td><td class="num">2</td><td class="mono">SITE-ALPHA</td></tr>
+          <tr><td class="mono">2024-09-15 14:00:02</td><td class="num">35.120258</td><td class="num">-117.890576</td><td class="num">50.0</td><td class="num">227.3</td><td class="num">8.23</td><td class="orange">588.5</td><td class="num">12.85</td><td><span class="det-false">False</span></td><td class="num">0.00</td><td class="num">2</td><td class="mono">SITE-ALPHA</td></tr>
+          <tr><td class="mono">2024-09-15 14:00:03</td><td class="num">35.120288</td><td class="num">-117.890536</td><td class="num">49.7</td><td class="num">226.8</td><td class="num">7.98</td><td class="orange">583.6</td><td class="num">9.89</td><td><span class="det-false">False</span></td><td class="num">0.00</td><td class="num">2</td><td class="mono">SITE-ALPHA</td></tr>
+          <tr><td class="mono">2024-09-15 14:00:04</td><td class="num">35.120323</td><td class="num">-117.890497</td><td class="num">50.4</td><td class="num">224.7</td><td class="num">7.79</td><td class="orange">578.3</td><td class="num">7.64</td><td><span class="det-true">True</span></td><td class="num">0.00</td><td class="num">2</td><td class="mono">SITE-ALPHA</td></tr>
+          <tr><td class="mono">2024-09-15 14:00:05</td><td class="num">35.120356</td><td class="num">-117.890453</td><td class="num">50.1</td><td class="num">225.8</td><td class="num">8.22</td><td class="orange">572.9</td><td class="num">9.59</td><td><span class="det-true">True</span></td><td class="num">0.00</td><td class="num">2</td><td class="mono">SITE-ALPHA</td></tr>
+          <tr><td class="mono">2024-09-15 14:00:06</td><td class="num">35.120395</td><td class="num">-117.890414</td><td class="num">49.9</td><td class="num">223.4</td><td class="num">8.31</td><td class="orange">567.3</td><td class="num">11.43</td><td><span class="det-false">False</span></td><td class="num">0.00</td><td class="num">2</td><td class="mono">SITE-ALPHA</td></tr>
+          <tr><td class="mono">2024-09-15 14:00:07</td><td class="num">35.120426</td><td class="num">-117.890372</td><td class="num">49.8</td><td class="num">223.4</td><td class="num">8.33</td><td class="orange">562.2</td><td class="num">8.81</td><td><span class="det-true">True</span></td><td class="num">0.00</td><td class="num">2</td><td class="mono">SITE-ALPHA</td></tr>
+          <tr><td class="mono">2024-09-15 14:00:08</td><td class="num">35.120459</td><td class="num">-117.890330</td><td class="num">49.8</td><td class="num">225.5</td><td class="num">8.06</td><td class="orange">556.9</td><td class="num">3.30</td><td><span class="det-false">False</span></td><td class="num">0.00</td><td class="num">2</td><td class="mono">SITE-ALPHA</td></tr>
+          <tr><td class="mono">2024-09-15 14:00:09</td><td class="num">35.120492</td><td class="num">-117.890288</td><td class="num">50.1</td><td class="num">226.4</td><td class="num">8.03</td><td class="orange">551.6</td><td class="num">7.98</td><td><span class="det-false">False</span></td><td class="num">0.00</td><td class="num">2</td><td class="mono">SITE-ALPHA</td></tr>
+        </tbody>
+      </table>
+      <div class="more-rows">··· 152 more rows · <a href="scenario_alpha_correlated.csv" download style="color:var(--orange);text-decoration:none;">Download full CSV</a> to view all records</div>
+    </div>
+  </div>
+</section>
+
+<!-- ── HOW TO USE ─────────────────────────────────────────── -->
+<section id="howto">
+  <div class="container">
+    <p class="section-label">Usage</p>
+    <div class="section-title">How to Use the Data</div>
+    <div class="code-intro">
+      <p>Both code blocks below work out of the box with the downloaded CSV files and a standard Python environment. The DCEF Tools page provides the full analysis pipeline — these snippets are the entry point.</p>
+    </div>
+    <div class="code-grid fade-in">
+
+      <div class="code-block">
+        <div class="code-header">
+          <span class="code-lang">Python</span>
+          <span class="code-label">Load &amp; inspect the correlated dataset</span>
+        </div>
+        <pre><span class="kw">import</span> pandas <span class="kw">as</span> pd
+
+<span class="cm"># Load the full correlated dataset</span>
+df = pd.<span class="fn">read_csv</span>(
+    <span class="st">"scenario_alpha_correlated.csv"</span>,
+    parse_dates=[<span class="st">"timestamp_utc"</span>]
+)
+
+<span class="cm"># Quick summary</span>
+<span class="fn">print</span>(df[[
+    <span class="st">"range_m"</span>, <span class="st">"pos_error_m"</span>,
+    <span class="st">"detection_flag"</span>
+]].<span class="fn">describe</span>())
+
+<span class="cm"># Detection rate overall</span>
+pod = df[<span class="st">"detection_flag"</span>].<span class="fn">mean</span>()
+<span class="fn">print</span>(<span class="fn">f</span><span class="st">"Overall PoD: {pod:.1%}"</span>)
+
+<span class="cm"># Mean error by range bin</span>
+df[<span class="st">"range_bin"</span>] = pd.<span class="fn">cut</span>(
+    df[<span class="st">"range_m"</span>],
+    bins=[<span class="nm">300</span>,<span class="nm">350</span>,<span class="nm">400</span>,<span class="nm">450</span>,<span class="nm">500</span>,<span class="nm">550</span>,<span class="nm">600</span>]
+)
+<span class="fn">print</span>(df.<span class="fn">groupby</span>(<span class="st">"range_bin"</span>)[
+    <span class="st">"pos_error_m"</span>
+].<span class="fn">mean</span>().<span class="fn">round</span>(<span class="nm">2</span>))</pre>
+      </div>
+
+      <div class="code-block">
+        <div class="code-header">
+          <span class="code-lang">Python</span>
+          <span class="code-label">Filter by tier &amp; check RF events</span>
+        </div>
+        <pre><span class="kw">import</span> pandas <span class="kw">as</span> pd
+
+df = pd.<span class="fn">read_csv</span>(
+    <span class="st">"scenario_alpha_correlated.csv"</span>,
+    parse_dates=[<span class="st">"timestamp_utc"</span>]
+)
+
+<span class="cm"># Filter to Tier 2 records only</span>
+t2 = df[df[<span class="st">"tier"</span>] == <span class="nm">2</span>].<span class="fn">copy</span>()
+
+<span class="cm"># Isolate any RF interference events</span>
+rf_events = df[
+    df[<span class="st">"rf_packet_loss_pct"</span>] > <span class="nm">0</span>
+][[
+    <span class="st">"timestamp_utc"</span>,
+    <span class="st">"rf_packet_loss_pct"</span>,
+    <span class="st">"range_m"</span>
+]]
+<span class="fn">print</span>(<span class="fn">f</span><span class="st">"RF events: {len(rf_events)}"</span>)
+
+<span class="cm"># PoD at each range bin</span>
+pod_curve = t2.<span class="fn">groupby</span>(
+    pd.<span class="fn">cut</span>(t2[<span class="st">"range_m"</span>],
+    bins=[<span class="nm">300</span>,<span class="nm">350</span>,<span class="nm">400</span>,<span class="nm">450</span>,
+          <span class="nm">500</span>,<span class="nm">550</span>,<span class="nm">600</span>])
+)[<span class="st">"detection_flag"</span>].<span class="fn">mean</span>()
+<span class="fn">print</span>(pod_curve.<span class="fn">round</span>(<span class="nm">3</span>))</pre>
+      </div>
+
+    </div>
+  </div>
+</section>
+
+<!-- ── FOOTER ─────────────────────────────────────────────── -->
+<footer>
+  <div class="container">
+    <div class="footer-inner">
+      <div class="footer-left">
+        <img src="icon.svg" alt="DCEF" class="footer-icon">
+        <div class="footer-text">
+          <strong>DCEF — Distributed C-UAS Evaluation Framework</strong><br>
+          Wayne State University · Master of Science in Systems Engineering<br>
+          SYE 6942 Capstone Research Project
+        </div>
+      </div>
+      <div class="footer-right">
+        <a href="https://github.com/nick-smock/dcef" class="footer-link" target="_blank" rel="noopener">
+          <svg viewBox="0 0 24 24"><path d="M9 19c-5 1.5-5-2.5-7-3m14 6v-3.87a3.37 3.37 0 0 0-.94-2.61c3.14-.35 6.44-1.54 6.44-7A5.44 5.44 0 0 0 20 4.77 5.07 5.07 0 0 0 19.91 1S18.73.65 16 2.48a13.38 13.38 0 0 0-7 0C6.27.65 5.09 1 5.09 1A5.07 5.07 0 0 0 5 4.77a5.44 5.44 0 0 0-1.5 3.78c0 5.42 3.3 6.61 6.44 7A3.37 3.37 0 0 0 9 18.13V22"/></svg>
+          GitHub
+        </a>
+      </div>
+    </div>
+  </div>
+</footer>
+
+<script>
+  const observer = new IntersectionObserver((entries) => {
+    entries.forEach(e => { if (e.isIntersecting) { e.target.classList.add('visible'); observer.unobserve(e.target); } });
+  }, { threshold: 0.06 });
+  document.querySelectorAll('.fade-in').forEach(el => observer.observe(el));
+</script>
+
+</body>
+</html>
