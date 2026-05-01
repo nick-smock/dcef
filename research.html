@@ -1,0 +1,875 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Research — DCEF</title>
+  <meta name="description" content="DCEF technical research findings — sensor correlation analysis, positional accuracy validation, and detection performance visualization.">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@400;600;700;800&family=Barlow:wght@300;400;500;600&family=Share+Tech+Mono&display=swap" rel="stylesheet">
+
+  <style>
+    :root {
+      --orange: #f26115;
+      --orange-dim: rgba(242, 97, 21, 0.12);
+      --orange-mid: rgba(242, 97, 21, 0.4);
+      --black: #060606;
+      --surface: #0e0e0e;
+      --surface-2: #161616;
+      --surface-3: #1c1c1c;
+      --border: rgba(255,255,255,0.07);
+      --border-orange: rgba(242,97,21,0.25);
+      --text: #f0f0f0;
+      --text-dim: #888;
+      --text-dimmer: #444;
+      --blue: #4a9eff;
+      --purple: #a78bfa;
+      --green: #4ade80;
+    }
+
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    html { scroll-behavior: smooth; }
+
+    body {
+      background: var(--black);
+      color: var(--text);
+      font-family: 'Barlow', sans-serif;
+      font-weight: 400;
+      overflow-x: hidden;
+    }
+
+    /* ── NAV ──────────────────────────────────────────── */
+    nav {
+      position: fixed; top: 0; left: 0; right: 0; z-index: 100;
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 0 2.5rem; height: 64px;
+      background: rgba(6,6,6,0.92); backdrop-filter: blur(12px);
+      border-bottom: 1px solid var(--border);
+    }
+    .nav-icon { height: 104px; width: auto; opacity: 0.95; }
+    .nav-links { display: flex; gap: 2.4rem; list-style: none; }
+    .nav-links a {
+      font-family: 'Barlow Condensed', sans-serif; font-weight: 600;
+      font-size: 0.78rem; letter-spacing: 0.12em; text-transform: uppercase;
+      color: var(--text-dim); text-decoration: none; transition: color 0.2s;
+    }
+    .nav-links a:hover, .nav-links a.active { color: var(--orange); }
+
+    /* ── PAGE HERO ────────────────────────────────────── */
+    .page-hero {
+      padding: 140px 0 80px;
+      background: var(--surface);
+      border-bottom: 1px solid var(--border);
+      position: relative; overflow: hidden;
+    }
+    .page-hero::before {
+      content: 'RESEARCH';
+      position: absolute; right: -1rem; top: 50%; transform: translateY(-50%);
+      font-family: 'Barlow Condensed', sans-serif; font-weight: 800;
+      font-size: clamp(6rem, 14vw, 13rem); color: rgba(255,255,255,0.025);
+      letter-spacing: 0.05em; white-space: nowrap; pointer-events: none; line-height: 1;
+    }
+    .page-hero .container { position: relative; z-index: 1; }
+    .breadcrumb {
+      font-family: 'Share Tech Mono', monospace; font-size: 0.68rem;
+      letter-spacing: 0.2em; color: var(--text-dimmer); text-transform: uppercase; margin-bottom: 1.4rem;
+    }
+    .breadcrumb a { color: var(--orange); text-decoration: none; }
+    .page-hero h1 {
+      font-family: 'Barlow Condensed', sans-serif; font-weight: 800;
+      font-size: clamp(3rem, 6vw, 5.5rem); text-transform: uppercase;
+      letter-spacing: 0.03em; line-height: 0.95; margin-bottom: 1.5rem;
+    }
+    .page-hero h1 span { color: var(--orange); }
+    .page-hero .lead {
+      font-size: 1.1rem; color: var(--text-dim); max-width: 620px; line-height: 1.75;
+    }
+
+    /* ── SHARED ───────────────────────────────────────── */
+    .container { max-width: 1160px; margin: 0 auto; padding: 0 2.5rem; }
+    section { padding: 6rem 0; }
+    .section-label {
+      font-family: 'Share Tech Mono', monospace; font-size: 0.68rem;
+      letter-spacing: 0.25em; color: var(--orange); text-transform: uppercase;
+      margin-bottom: 1rem; display: flex; align-items: center; gap: 0.75rem;
+    }
+    .section-label::before { content: ''; display: block; width: 24px; height: 1px; background: var(--orange); }
+    .section-title {
+      font-family: 'Barlow Condensed', sans-serif; font-weight: 800;
+      font-size: clamp(1.8rem, 3vw, 2.8rem); text-transform: uppercase;
+      letter-spacing: 0.03em; margin-bottom: 2rem; line-height: 1.05;
+    }
+
+    /* ── SCENARIO BANNER ──────────────────────────────── */
+    .scenario-banner {
+      background: var(--surface-3);
+      border: 1px solid var(--border-orange);
+      padding: 1.4rem 2rem;
+      display: flex;
+      align-items: center;
+      gap: 2.5rem;
+      flex-wrap: wrap;
+      margin-bottom: 3rem;
+    }
+    .scenario-banner .s-label {
+      font-family: 'Share Tech Mono', monospace;
+      font-size: 0.6rem; letter-spacing: 0.2em; color: var(--orange); text-transform: uppercase;
+      margin-bottom: 0.25rem;
+    }
+    .scenario-banner .s-val {
+      font-family: 'Barlow Condensed', sans-serif; font-weight: 700;
+      font-size: 1rem; text-transform: uppercase; letter-spacing: 0.05em;
+    }
+    .scenario-banner .s-item { flex-shrink: 0; }
+    .scenario-banner .s-divider { width: 1px; height: 36px; background: var(--border); flex-shrink: 0; }
+    .synthetic-tag {
+      margin-left: auto;
+      font-family: 'Share Tech Mono', monospace;
+      font-size: 0.62rem; letter-spacing: 0.15em;
+      color: var(--text-dimmer); border: 1px solid var(--text-dimmer);
+      padding: 0.3rem 0.8rem; text-transform: uppercase;
+    }
+
+    /* ── PIPELINE FLOW ────────────────────────────────── */
+    #pipeline { background: var(--black); border-bottom: 1px solid var(--border); }
+
+    .pipeline-flow {
+      display: flex; align-items: stretch; gap: 0;
+      background: var(--border); border: 1px solid var(--border);
+    }
+    .pipeline-step {
+      background: var(--surface); flex: 1;
+      padding: 2.2rem 1.8rem; position: relative; transition: background 0.2s;
+    }
+    .pipeline-step:hover { background: var(--surface-2); }
+    .pipeline-arrow {
+      width: 32px; flex-shrink: 0;
+      background: var(--surface-2);
+      display: flex; align-items: center; justify-content: center;
+      color: var(--orange); font-family: 'Share Tech Mono', monospace; font-size: 1rem;
+    }
+    .pipeline-step-num {
+      font-family: 'Share Tech Mono', monospace; font-size: 0.6rem;
+      letter-spacing: 0.2em; color: var(--orange); margin-bottom: 0.7rem;
+    }
+    .pipeline-step-title {
+      font-family: 'Barlow Condensed', sans-serif; font-weight: 700;
+      font-size: 1.1rem; text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 0.6rem;
+    }
+    .pipeline-step p { font-size: 0.85rem; color: var(--text-dim); line-height: 1.6; }
+    .pipeline-tag {
+      display: inline-block; margin-top: 0.8rem;
+      font-family: 'Share Tech Mono', monospace; font-size: 0.6rem;
+      letter-spacing: 0.1em; color: var(--text-dimmer); border: 1px solid var(--text-dimmer); padding: 0.2rem 0.5rem;
+    }
+
+    /* ── CHART SECTIONS ───────────────────────────────── */
+    .chart-section { border-bottom: 1px solid var(--border); }
+    .chart-section:nth-child(odd) { background: var(--black); }
+    .chart-section:nth-child(even) { background: var(--surface); }
+
+    .chart-grid {
+      display: grid; grid-template-columns: 1fr 1.2fr; gap: 4rem; align-items: start;
+    }
+    .chart-grid.reverse { direction: rtl; }
+    .chart-grid.reverse > * { direction: ltr; }
+
+    .chart-text p {
+      font-size: 1rem; color: var(--text-dim); line-height: 1.8; margin-bottom: 1.2rem;
+    }
+    .chart-text p:last-child { margin-bottom: 0; }
+
+    .chart-findings {
+      margin-top: 1.8rem;
+      display: flex; flex-direction: column; gap: 0.7rem;
+    }
+    .finding {
+      display: flex; gap: 0.75rem; align-items: flex-start;
+      font-size: 0.88rem; color: var(--text-dim); line-height: 1.5;
+    }
+    .finding-dot {
+      width: 6px; height: 6px; border-radius: 50%;
+      background: var(--orange); flex-shrink: 0; margin-top: 0.42rem;
+    }
+
+    .chart-wrap {
+      background: var(--surface-3);
+      border: 1px solid var(--border);
+      padding: 1.5rem;
+      position: relative;
+    }
+    .chart-title-bar {
+      display: flex; justify-content: space-between; align-items: center;
+      margin-bottom: 1rem;
+    }
+    .chart-name {
+      font-family: 'Share Tech Mono', monospace; font-size: 0.65rem;
+      letter-spacing: 0.15em; color: var(--text-dim); text-transform: uppercase;
+    }
+    .chart-badge {
+      font-family: 'Share Tech Mono', monospace; font-size: 0.58rem;
+      letter-spacing: 0.1em; color: var(--text-dimmer);
+      border: 1px solid var(--text-dimmer); padding: 0.15rem 0.5rem;
+      text-transform: uppercase;
+    }
+    canvas.chart { display: block; width: 100%; }
+
+    /* ── KEY FINDINGS ─────────────────────────────────── */
+    #findings { background: var(--black); }
+    .findings-grid {
+      display: grid; grid-template-columns: repeat(4, 1fr);
+      gap: 1px; background: var(--border); border: 1px solid var(--border);
+    }
+    .finding-card {
+      background: var(--surface); padding: 2.2rem 1.8rem;
+      position: relative; overflow: hidden; transition: background 0.2s;
+    }
+    .finding-card::before {
+      content: ''; position: absolute; top: 0; left: 0; right: 0; height: 2px;
+      background: var(--orange); transform: scaleX(0); transform-origin: left; transition: transform 0.35s;
+    }
+    .finding-card:hover { background: var(--surface-2); }
+    .finding-card:hover::before { transform: scaleX(1); }
+    .finding-num {
+      font-family: 'Barlow Condensed', sans-serif; font-weight: 800;
+      font-size: 3rem; color: var(--orange); line-height: 1; margin-bottom: 0.3rem;
+    }
+    .finding-unit {
+      font-family: 'Share Tech Mono', monospace; font-size: 0.65rem;
+      color: var(--text-dim); letter-spacing: 0.1em; margin-bottom: 1rem;
+    }
+    .finding-card h4 {
+      font-family: 'Barlow Condensed', sans-serif; font-weight: 700;
+      font-size: 1rem; text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 0.6rem;
+    }
+    .finding-card p { font-size: 0.85rem; color: var(--text-dim); line-height: 1.6; }
+
+    /* ── FOOTER ───────────────────────────────────────── */
+    footer {
+      background: var(--surface); border-top: 1px solid var(--border); padding: 2.8rem 0;
+    }
+    .footer-inner {
+      display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 1.5rem;
+    }
+    .footer-left { display: flex; align-items: center; gap: 1.2rem; }
+    .footer-icon { height: 28px; width: auto; opacity: 0.6; }
+    .footer-text {
+      font-family: 'Share Tech Mono', monospace; font-size: 0.7rem;
+      letter-spacing: 0.12em; color: var(--text-dimmer); line-height: 1.7;
+    }
+    .footer-text strong { color: var(--text-dim); font-weight: 400; }
+    .footer-right { display: flex; align-items: center; gap: 2rem; }
+    .footer-link {
+      display: flex; align-items: center; gap: 0.5rem;
+      font-family: 'Barlow Condensed', sans-serif; font-weight: 600;
+      font-size: 0.78rem; letter-spacing: 0.14em; text-transform: uppercase;
+      color: var(--text-dim); text-decoration: none; transition: color 0.2s;
+    }
+    .footer-link:hover { color: var(--orange); }
+    .footer-link svg { width: 16px; height: 16px; fill: currentColor; }
+
+    .fade-in { opacity: 0; transform: translateY(20px); transition: opacity 0.6s ease, transform 0.6s ease; }
+    .fade-in.visible { opacity: 1; transform: translateY(0); }
+  </style>
+</head>
+<body>
+
+<!-- ── NAV ──────────────────────────────────────────────── -->
+<nav>
+  <a href="index.html"><img src="icon.svg" alt="DCEF" class="nav-icon"></a>
+  <ul class="nav-links">
+    <li><a href="framework.html">Framework</a></li>
+    <li><a href="research.html" class="active">Research</a></li>
+    <li><a href="data.html">Data</a></li>
+    <li><a href="tools.html">Tools</a></li>
+    <li><a href="references.html">References</a></li>
+  </ul>
+</nav>
+
+<!-- ── PAGE HERO ──────────────────────────────────────────── -->
+<div class="page-hero">
+  <div class="container">
+    <div class="breadcrumb"><a href="index.html">DCEF</a> / Research</div>
+    <h1>Technical<br><span>Research</span></h1>
+    <p class="lead">Sensor correlation analysis, positional accuracy validation, and detection performance visualization across the DCEF accuracy tiers. All charts generated from Scenario Alpha — a synthetic Tier 2 radar evaluation dataset.</p>
+  </div>
+</div>
+
+<!-- ── PIPELINE ───────────────────────────────────────────── -->
+<section id="pipeline">
+  <div class="container">
+    <p class="section-label">Correlation Pipeline</p>
+    <div class="section-title">From Telemetry to Analysis</div>
+
+    <div class="scenario-banner fade-in">
+      <div class="s-item"><div class="s-label">Scenario</div><div class="s-val">Alpha — Synthetic</div></div>
+      <div class="s-divider"></div>
+      <div class="s-item"><div class="s-label">Sensor Type</div><div class="s-val">Radar</div></div>
+      <div class="s-divider"></div>
+      <div class="s-item"><div class="s-label">DCEF Tier</div><div class="s-val">Tier 2 — Entry RTK</div></div>
+      <div class="s-divider"></div>
+      <div class="s-item"><div class="s-label">Range Band</div><div class="s-val">300 – 600m</div></div>
+      <div class="s-divider"></div>
+      <div class="s-item"><div class="s-label">Flight Profiles</div><div class="s-val">Hover · Approach · Orbit</div></div>
+      <div class="s-divider"></div>
+      <div class="s-item"><div class="s-label">CEP Applied</div><div class="s-val">≤ 30cm</div></div>
+      <div class="synthetic-tag">Synthetic Data</div>
+    </div>
+
+    <div class="pipeline-flow fade-in">
+      <div class="pipeline-step">
+        <div class="pipeline-step-num">STEP 01</div>
+        <div class="pipeline-step-title">Ingest Telemetry</div>
+        <p>PX4 ULog and MAVLink tlog files are parsed using pyulog. Position, heading, speed, and RF link quality fields are extracted at native log rate.</p>
+        <span class="pipeline-tag">pyulog · MAVLink</span>
+      </div>
+      <div class="pipeline-arrow">→</div>
+      <div class="pipeline-step">
+        <div class="pipeline-step-num">STEP 02</div>
+        <div class="pipeline-step-title">Ingest Sensor Output</div>
+        <p>C-UAS sensor track data is ingested as CSV, mapped to the DCEF schema fields, and validated for completeness. Unmappable records are flagged.</p>
+        <span class="pipeline-tag">DCEF Schema · CSV</span>
+      </div>
+      <div class="pipeline-arrow">→</div>
+      <div class="pipeline-step">
+        <div class="pipeline-step-num">STEP 03</div>
+        <div class="pipeline-step-title">Time Synchronize</div>
+        <p>Both streams are resampled to a common 1 Hz analysis clock. GPS-disciplined timestamps align records within the ±50ms tolerance window.</p>
+        <span class="pipeline-tag">pandas · NTP · GPS time</span>
+      </div>
+      <div class="pipeline-arrow">→</div>
+      <div class="pipeline-step">
+        <div class="pipeline-step-num">STEP 04</div>
+        <div class="pipeline-step-title">Compute Derived Fields</div>
+        <p>Slant range, horizontal position error, detection flags, and range-bin assignments are computed per correlated record pair.</p>
+        <span class="pipeline-tag">haversine · numpy</span>
+      </div>
+      <div class="pipeline-arrow">→</div>
+      <div class="pipeline-step">
+        <div class="pipeline-step-num">STEP 05</div>
+        <div class="pipeline-step-title">Generate Outputs</div>
+        <p>Scatter plots, polar bias plots, PoD curves, and KML overlays are produced from the single correlated dataset — one pipeline, four outputs.</p>
+        <span class="pipeline-tag">matplotlib · simplekml</span>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ── CHART 1: POSITION ERROR SCATTER ────────────────────── -->
+<section class="chart-section">
+  <div class="container">
+    <div class="chart-grid fade-in">
+      <div class="chart-text">
+        <p class="section-label">Visualization 01</p>
+        <div class="section-title">2D Position Error Scatter</div>
+        <p>Each point represents a single correlated record — the sensor-reported target position plotted relative to the onboard telemetry ground truth at origin. The tighter the cluster around center, the higher the sensor's positional accuracy.</p>
+        <p>Points are color-coded by slant range band. This reveals whether sensor error grows with distance — a common radar characteristic — or remains consistent across the evaluation envelope.</p>
+        <div class="chart-findings">
+          <div class="finding"><div class="finding-dot"></div><span>Mean horizontal error: <strong style="color:var(--text)">4.2m</strong> — well within Tier 2 detection threshold</span></div>
+          <div class="finding"><div class="finding-dot"></div><span>95th percentile error: <strong style="color:var(--text)">11.8m</strong> — driven by far-range outliers at 550–600m</span></div>
+          <div class="finding"><div class="finding-dot"></div><span>Consistent northward bias visible across all range bands — indicates systematic antenna boresight offset</span></div>
+        </div>
+      </div>
+      <div class="chart-wrap">
+        <div class="chart-title-bar">
+          <span class="chart-name">Position Error — Scenario Alpha · Radar</span>
+          <span class="chart-badge">Synthetic</span>
+        </div>
+        <canvas class="chart" id="scatter-chart" height="360"></canvas>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ── CHART 2: POLAR ERROR ────────────────────────────────── -->
+<section class="chart-section">
+  <div class="container">
+    <div class="chart-grid reverse fade-in">
+      <div class="chart-text">
+        <p class="section-label">Visualization 02</p>
+        <div class="section-title">Polar Error Plot</div>
+        <p>The polar plot bins position error magnitude by vehicle heading at the time of detection. Each spoke represents the mean error for tracks where the drone was flying in that direction, revealing directional sensor bias that a simple mean error metric cannot capture.</p>
+        <p>A perfectly accurate sensor would produce a uniform circle. Elongation along any axis indicates the sensor over-reports or under-reports position in that direction — often caused by multipath, terrain masking, or antenna pattern irregularities.</p>
+        <div class="chart-findings">
+          <div class="finding"><div class="finding-dot"></div><span>Maximum bias at <strong style="color:var(--text)">340° (NNW)</strong> — 7.1m mean error, likely terrain masking from treeline</span></div>
+          <div class="finding"><div class="finding-dot"></div><span>Minimum bias at <strong style="color:var(--text)">160° (SSE)</strong> — 2.8m mean error, clear line-of-sight corridor</span></div>
+          <div class="finding"><div class="finding-dot"></div><span>Overall directional variance of 4.3m suggests site-specific siting adjustment recommended</span></div>
+        </div>
+      </div>
+      <div class="chart-wrap">
+        <div class="chart-title-bar">
+          <span class="chart-name">Directional Bias — Scenario Alpha · Radar</span>
+          <span class="chart-badge">Synthetic</span>
+        </div>
+        <canvas class="chart" id="polar-chart" height="360"></canvas>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ── CHART 3: POD CURVE ──────────────────────────────────── -->
+<section class="chart-section">
+  <div class="container">
+    <div class="chart-grid fade-in">
+      <div class="chart-text">
+        <p class="section-label">Visualization 03</p>
+        <div class="section-title">Range-Binned Probability of Detection</div>
+        <p>The PoD curve plots the fraction of correlated truth records that produced a confirmed sensor detection, binned by 50m range intervals. The shaded band represents the 90% confidence interval derived from binomial sampling at each range step.</p>
+        <p>This is the primary procurement-relevant output of a DCEF evaluation. A PoD curve produced under DCEF methodology can be directly compared against curves from other sites and vendors — because the ground truth definition is identical.</p>
+        <div class="chart-findings">
+          <div class="finding"><div class="finding-dot"></div><span>PoD ≥ 0.90 maintained through <strong style="color:var(--text)">450m</strong> — meets Tier 2 detection threshold for this scenario</span></div>
+          <div class="finding"><div class="finding-dot"></div><span>Curve knee at <strong style="color:var(--text)">480m</strong> — rapid detection degradation begins beyond this range</span></div>
+          <div class="finding"><div class="finding-dot"></div><span>Wide confidence band at 550m+ indicates insufficient sample count — additional runs required at far range</span></div>
+        </div>
+      </div>
+      <div class="chart-wrap">
+        <div class="chart-title-bar">
+          <span class="chart-name">Probability of Detection vs. Range — Scenario Alpha</span>
+          <span class="chart-badge">Synthetic</span>
+        </div>
+        <canvas class="chart" id="pod-chart" height="360"></canvas>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ── CHART 4: TRACK OVERLAY ──────────────────────────────── -->
+<section class="chart-section">
+  <div class="container">
+    <div class="chart-grid reverse fade-in">
+      <div class="chart-text">
+        <p class="section-label">Visualization 04</p>
+        <div class="section-title">Track Overlay / KML</div>
+        <p>The track overlay plots the telemetry ground truth flight path against the sensor-reported track for the same time window. Divergence between the two lines is position error made spatially visible — showing not just how much the sensor is wrong, but where and in what direction.</p>
+        <p>In the full DCEF pipeline this output is exported as a KML file, enabling direct overlay in Google Earth for site-specific context — terrain, structures, and sensor siting all visible alongside the track data.</p>
+        <div class="chart-findings">
+          <div class="finding"><div class="finding-dot"></div><span><strong style="color:var(--orange)">Orange track</strong> — onboard telemetry ground truth (Tier 2 RTK, ≤30cm CEP)</span></div>
+          <div class="finding"><div class="finding-dot"></div><span><strong style="color:var(--blue)">Blue track</strong> — radar-reported sensor track for the same time window</span></div>
+          <div class="finding"><div class="finding-dot"></div><span>Sensor track consistently leads truth track on inbound approach — indicates range-rate overestimation in the radar solution</span></div>
+        </div>
+      </div>
+      <div class="chart-wrap">
+        <div class="chart-title-bar">
+          <span class="chart-name">Truth vs. Sensor Track — Scenario Alpha · Approach Profile</span>
+          <span class="chart-badge">Synthetic · KML Export Available</span>
+        </div>
+        <canvas class="chart" id="track-chart" height="360"></canvas>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ── KEY FINDINGS ────────────────────────────────────────── -->
+<section id="findings">
+  <div class="container">
+    <p class="section-label">Summary</p>
+    <div class="section-title">Key Findings — Scenario Alpha</div>
+    <div class="findings-grid fade-in">
+      <div class="finding-card">
+        <div class="finding-num">4.2m</div>
+        <div class="finding-unit">Mean horizontal position error</div>
+        <h4>Within Tier 2 Threshold</h4>
+        <p>Mean sensor position error of 4.2m is well within the detection-class performance band for a Tier 2 evaluation. Suitable for comparative vendor analysis.</p>
+      </div>
+      <div class="finding-card">
+        <div class="finding-num">450m</div>
+        <div class="finding-unit">PoD ≥ 90% maintained to this range</div>
+        <h4>Effective Detection Range</h4>
+        <p>Radar maintained 90%+ probability of detection out to 450m under hover and approach profiles. Rapid degradation begins beyond 480m in this scenario configuration.</p>
+      </div>
+      <div class="finding-card">
+        <div class="finding-num">340°</div>
+        <div class="finding-unit">Azimuth of maximum directional bias</div>
+        <h4>NNW Bias Identified</h4>
+        <p>Polar analysis revealed a 7.1m mean error spike at 340° — consistent with terrain masking from a treeline feature at that bearing from the sensor origin.</p>
+      </div>
+      <div class="finding-card">
+        <div class="finding-num">0%</div>
+        <div class="finding-unit">RF packet loss recorded</div>
+        <h4>Clean RF Environment</h4>
+        <p>No GCS link degradation or packet loss events recorded during evaluation runs. RF environment confirmed benign — no jamming or interference effects present in this dataset.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ── FOOTER ──────────────────────────────────────────────── -->
+<footer>
+  <div class="container">
+    <div class="footer-inner">
+      <div class="footer-left">
+        <img src="icon.svg" alt="DCEF" class="footer-icon">
+        <div class="footer-text">
+          <strong>DCEF — Distributed C-UAS Evaluation Framework</strong><br>
+          Wayne State University · Master of Science in Systems Engineering<br>
+          SYE 6942 Capstone Research Project
+        </div>
+      </div>
+      <div class="footer-right">
+        <a href="https://github.com/nick-smock/dcef" class="footer-link" target="_blank" rel="noopener">
+          <svg viewBox="0 0 24 24"><path d="M9 19c-5 1.5-5-2.5-7-3m14 6v-3.87a3.37 3.37 0 0 0-.94-2.61c3.14-.35 6.44-1.54 6.44-7A5.44 5.44 0 0 0 20 4.77 5.07 5.07 0 0 0 19.91 1S18.73.65 16 2.48a13.38 13.38 0 0 0-7 0C6.27.65 5.09 1 5.09 1A5.07 5.07 0 0 0 5 4.77a5.44 5.44 0 0 0-1.5 3.78c0 5.42 3.3 6.61 6.44 7A3.37 3.37 0 0 0 9 18.13V22"/></svg>
+          GitHub
+        </a>
+      </div>
+    </div>
+  </div>
+</footer>
+
+<!-- ── CHART SCRIPTS ───────────────────────────────────────── -->
+<script>
+// ── Shared helpers ──────────────────────────────────────────
+function dpr() { return window.devicePixelRatio || 1; }
+
+function setupCanvas(id) {
+  const canvas = document.getElementById(id);
+  const rect = canvas.parentElement.getBoundingClientRect();
+  const w = rect.width - 48; // account for padding
+  const h = parseInt(canvas.getAttribute('height'));
+  canvas.width  = w * dpr();
+  canvas.height = h * dpr();
+  canvas.style.width  = w + 'px';
+  canvas.style.height = h + 'px';
+  const ctx = canvas.getContext('2d');
+  ctx.scale(dpr(), dpr());
+  return { ctx, w, h };
+}
+
+function gridLines(ctx, w, h, padL, padR, padT, padB) {
+  const plotW = w - padL - padR;
+  const plotH = h - padT - padB;
+  ctx.strokeStyle = 'rgba(255,255,255,0.05)';
+  ctx.lineWidth = 0.5;
+  for (let i = 0; i <= 4; i++) {
+    const x = padL + (plotW / 4) * i;
+    ctx.beginPath(); ctx.moveTo(x, padT); ctx.lineTo(x, padT + plotH); ctx.stroke();
+  }
+  for (let i = 0; i <= 4; i++) {
+    const y = padT + (plotH / 4) * i;
+    ctx.beginPath(); ctx.moveTo(padL, y); ctx.lineTo(padL + plotW, y); ctx.stroke();
+  }
+}
+
+function axisLabel(ctx, txt, x, y, color) {
+  ctx.fillStyle = color || 'rgba(255,255,255,0.25)';
+  ctx.font = `500 10px "Share Tech Mono", monospace`;
+  ctx.fillText(txt, x, y);
+}
+
+// ── CHART 1: POSITION ERROR SCATTER ─────────────────────────
+(function() {
+  const { ctx, w, h } = setupCanvas('scatter-chart');
+  const pad = { l: 52, r: 20, t: 20, b: 48 };
+  const pw = w - pad.l - pad.r;
+  const ph = h - pad.t - pad.b;
+
+  // Synthetic data: points relative to truth origin (0,0), in meters
+  const seed = (n) => { let x = Math.sin(n * 9301 + 49297) * 233280; return x - Math.floor(x); };
+  const randn = (i) => { let u = seed(i*2), v = seed(i*2+1); return Math.sqrt(-2*Math.log(u+0.001)) * Math.cos(2*Math.PI*v); };
+
+  const points = [];
+  const rangeColors = [
+    { label: '300–400m', color: '#4a9eff' },
+    { label: '400–500m', color: '#f26115' },
+    { label: '500–600m', color: '#a78bfa' },
+  ];
+
+  for (let i = 0; i < 120; i++) {
+    const band = Math.floor(i / 40);
+    const spread = 2.5 + band * 2.8;
+    const biasN = 1.2 + band * 0.4; // northward bias increases with range
+    points.push({
+      x: randn(i) * spread,
+      y: randn(i + 200) * spread + biasN,
+      band,
+    });
+  }
+
+  const maxR = 18;
+  const cx = pad.l + pw / 2;
+  const cy = pad.t + ph / 2;
+  const scale = (ph / 2) / maxR;
+
+  // Background
+  ctx.fillStyle = '#0e0e0e';
+  ctx.fillRect(pad.l, pad.t, pw, ph);
+  gridLines(ctx, w, h, pad.l, pad.r, pad.t, pad.b);
+
+  // Concentric CEP rings
+  [5, 10, 15].forEach((r, i) => {
+    ctx.beginPath();
+    ctx.arc(cx, cy, r * scale, 0, Math.PI * 2);
+    ctx.strokeStyle = `rgba(242,97,21,${0.12 - i * 0.03})`;
+    ctx.lineWidth = 0.8; ctx.setLineDash([3, 4]); ctx.stroke(); ctx.setLineDash([]);
+    axisLabel(ctx, `${r}m`, cx + r * scale + 3, cy - 3, 'rgba(242,97,21,0.3)');
+  });
+
+  // Points
+  points.forEach(p => {
+    const px = cx + p.x * scale;
+    const py = cy - p.y * scale;
+    ctx.beginPath();
+    ctx.arc(px, py, 3, 0, Math.PI * 2);
+    ctx.fillStyle = rangeColors[p.band].color + 'cc';
+    ctx.fill();
+  });
+
+  // Origin crosshair
+  ctx.strokeStyle = 'rgba(255,255,255,0.5)'; ctx.lineWidth = 1; ctx.setLineDash([4, 4]);
+  ctx.beginPath(); ctx.moveTo(cx - 10, cy); ctx.lineTo(cx + 10, cy); ctx.stroke();
+  ctx.beginPath(); ctx.moveTo(cx, cy - 10); ctx.lineTo(cx, cy + 10); ctx.stroke();
+  ctx.setLineDash([]);
+  ctx.beginPath(); ctx.arc(cx, cy, 3, 0, Math.PI*2);
+  ctx.fillStyle = '#fff'; ctx.fill();
+
+  // Axes labels
+  axisLabel(ctx, 'West  ←  East (m)', pad.l, h - 10);
+  ctx.save(); ctx.translate(14, pad.t + ph / 2); ctx.rotate(-Math.PI / 2);
+  axisLabel(ctx, 'South  ←  North (m)', -40, 0); ctx.restore();
+
+  // Legend
+  rangeColors.forEach((rc, i) => {
+    ctx.beginPath(); ctx.arc(pad.l + 8, pad.t + 8 + i * 18, 4, 0, Math.PI * 2);
+    ctx.fillStyle = rc.color; ctx.fill();
+    ctx.fillStyle = 'rgba(255,255,255,0.5)'; ctx.font = '9px "Share Tech Mono", monospace';
+    ctx.fillText(rc.label, pad.l + 18, pad.t + 12 + i * 18);
+  });
+})();
+
+// ── CHART 2: POLAR ERROR ─────────────────────────────────────
+(function() {
+  const { ctx, w, h } = setupCanvas('polar-chart');
+  const cx = w / 2, cy = h / 2 + 10;
+  const maxR = Math.min(w, h) / 2 - 40;
+
+  // Synthetic directional bias data (16 headings, 0–360 in 22.5° steps)
+  // Values represent mean error in meters at each heading
+  const bearings = 16;
+  const biasData = [
+    3.1, 3.4, 4.0, 4.8, 5.5, 5.2, 4.6, 3.8,   // N through SE
+    2.8, 3.0, 3.6, 4.2, 5.8, 6.4, 7.1, 5.2,   // S through NNW
+  ];
+  const maxBias = 9;
+
+  ctx.fillStyle = '#0e0e0e';
+  ctx.fillRect(0, 0, w, h);
+
+  // Range rings
+  [3, 5, 7, 9].forEach((r, i) => {
+    ctx.beginPath();
+    ctx.arc(cx, cy, (r / maxBias) * maxR, 0, Math.PI * 2);
+    ctx.strokeStyle = `rgba(255,255,255,${0.06 - i * 0.01})`;
+    ctx.lineWidth = 0.5; ctx.setLineDash([2, 4]); ctx.stroke(); ctx.setLineDash([]);
+    ctx.fillStyle = 'rgba(255,255,255,0.2)'; ctx.font = '9px "Share Tech Mono", monospace';
+    ctx.fillText(`${r}m`, cx + (r / maxBias) * maxR + 3, cy - 3);
+  });
+
+  // Spoke lines
+  for (let i = 0; i < bearings; i++) {
+    const angle = (i / bearings) * Math.PI * 2 - Math.PI / 2;
+    ctx.beginPath(); ctx.moveTo(cx, cy);
+    ctx.lineTo(cx + Math.cos(angle) * maxR, cy + Math.sin(angle) * maxR);
+    ctx.strokeStyle = 'rgba(255,255,255,0.05)'; ctx.lineWidth = 0.5; ctx.stroke();
+  }
+
+  // Compass labels
+  const dirs = ['N','','NE','','E','','SE','','S','','SW','','W','','NW',''];
+  dirs.forEach((d, i) => {
+    if (!d) return;
+    const angle = (i / bearings) * Math.PI * 2 - Math.PI / 2;
+    const lx = cx + Math.cos(angle) * (maxR + 18);
+    const ly = cy + Math.sin(angle) * (maxR + 18);
+    ctx.fillStyle = 'rgba(255,255,255,0.35)'; ctx.font = '10px "Share Tech Mono", monospace';
+    ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+    ctx.fillText(d, lx, ly);
+  });
+
+  // Plot filled polygon
+  ctx.beginPath();
+  biasData.forEach((val, i) => {
+    const angle = (i / bearings) * Math.PI * 2 - Math.PI / 2;
+    const r = (val / maxBias) * maxR;
+    const px = cx + Math.cos(angle) * r;
+    const py = cy + Math.sin(angle) * r;
+    i === 0 ? ctx.moveTo(px, py) : ctx.lineTo(px, py);
+  });
+  ctx.closePath();
+  ctx.fillStyle = 'rgba(242,97,21,0.15)'; ctx.fill();
+  ctx.strokeStyle = 'rgba(242,97,21,0.7)'; ctx.lineWidth = 1.5; ctx.stroke();
+
+  // Points
+  biasData.forEach((val, i) => {
+    const angle = (i / bearings) * Math.PI * 2 - Math.PI / 2;
+    const r = (val / maxBias) * maxR;
+    ctx.beginPath(); ctx.arc(cx + Math.cos(angle) * r, cy + Math.sin(angle) * r, 3, 0, Math.PI * 2);
+    ctx.fillStyle = '#f26115'; ctx.fill();
+  });
+
+  ctx.textAlign = 'left'; ctx.textBaseline = 'alphabetic';
+})();
+
+// ── CHART 3: POD CURVE ───────────────────────────────────────
+(function() {
+  const { ctx, w, h } = setupCanvas('pod-chart');
+  const pad = { l: 56, r: 20, t: 20, b: 52 };
+  const pw = w - pad.l - pad.r;
+  const ph = h - pad.t - pad.b;
+
+  // Range bins: 300–350, 350–400, ..., 550–600 (6 bins)
+  const bins = [325, 375, 425, 475, 525, 575];
+  const pod  = [0.98, 0.97, 0.94, 0.91, 0.72, 0.51];
+  const ciLo = [0.94, 0.93, 0.89, 0.85, 0.62, 0.35];
+  const ciHi = [1.00, 1.00, 0.98, 0.96, 0.82, 0.67];
+
+  const minR = 300, maxR = 600;
+  const rx = (r) => pad.l + ((r - minR) / (maxR - minR)) * pw;
+  const ry = (p) => pad.t + (1 - p) * ph;
+
+  ctx.fillStyle = '#0e0e0e'; ctx.fillRect(pad.l, pad.t, pw, ph);
+  gridLines(ctx, w, h, pad.l, pad.r, pad.t, pad.b);
+
+  // 90% threshold line
+  ctx.beginPath(); ctx.moveTo(pad.l, ry(0.9)); ctx.lineTo(pad.l + pw, ry(0.9));
+  ctx.strokeStyle = 'rgba(74,222,128,0.25)'; ctx.lineWidth = 1; ctx.setLineDash([6, 4]); ctx.stroke();
+  ctx.setLineDash([]);
+  axisLabel(ctx, 'PoD = 0.90', pad.l + 4, ry(0.9) - 5, 'rgba(74,222,128,0.5)');
+
+  // Confidence band
+  ctx.beginPath();
+  bins.forEach((r, i) => ctx[i === 0 ? 'moveTo' : 'lineTo'](rx(r), ry(ciHi[i])));
+  bins.slice().reverse().forEach((r, i) => ctx.lineTo(rx(r), ry(ciLo[ciLo.length - 1 - i])));
+  ctx.closePath();
+  ctx.fillStyle = 'rgba(242,97,21,0.08)'; ctx.fill();
+
+  // Confidence band borders
+  ctx.beginPath();
+  bins.forEach((r, i) => ctx[i === 0 ? 'moveTo' : 'lineTo'](rx(r), ry(ciHi[i])));
+  ctx.strokeStyle = 'rgba(242,97,21,0.2)'; ctx.lineWidth = 0.8; ctx.stroke();
+  ctx.beginPath();
+  bins.forEach((r, i) => ctx[i === 0 ? 'moveTo' : 'lineTo'](rx(r), ry(ciLo[i])));
+  ctx.stroke();
+
+  // Main curve
+  ctx.beginPath();
+  bins.forEach((r, i) => ctx[i === 0 ? 'moveTo' : 'lineTo'](rx(r), ry(pod[i])));
+  ctx.strokeStyle = '#f26115'; ctx.lineWidth = 2.5; ctx.stroke();
+
+  // Points
+  bins.forEach((r, i) => {
+    ctx.beginPath(); ctx.arc(rx(r), ry(pod[i]), 4, 0, Math.PI * 2);
+    ctx.fillStyle = '#f26115'; ctx.fill();
+    ctx.fillStyle = '#0e0e0e'; ctx.beginPath(); ctx.arc(rx(r), ry(pod[i]), 2, 0, Math.PI * 2); ctx.fill();
+  });
+
+  // X axis labels
+  bins.forEach((r, i) => {
+    ctx.fillStyle = 'rgba(255,255,255,0.3)'; ctx.font = '9px "Share Tech Mono", monospace';
+    ctx.textAlign = 'center';
+    ctx.fillText(`${r}m`, rx(r), pad.t + ph + 16);
+  });
+
+  // Y axis labels
+  [0, 0.25, 0.5, 0.75, 1.0].forEach(v => {
+    ctx.fillStyle = 'rgba(255,255,255,0.25)'; ctx.font = '9px "Share Tech Mono", monospace';
+    ctx.textAlign = 'right';
+    ctx.fillText(v.toFixed(2), pad.l - 6, ry(v) + 4);
+  });
+
+  ctx.fillStyle = 'rgba(255,255,255,0.25)'; ctx.font = '9px "Share Tech Mono", monospace';
+  ctx.textAlign = 'center';
+  ctx.fillText('Slant Range (m)', pad.l + pw / 2, h - 8);
+  ctx.save(); ctx.translate(14, pad.t + ph / 2); ctx.rotate(-Math.PI / 2);
+  ctx.fillText('Probability of Detection', 0, 0); ctx.restore();
+  ctx.textAlign = 'left';
+})();
+
+// ── CHART 4: TRACK OVERLAY ───────────────────────────────────
+(function() {
+  const { ctx, w, h } = setupCanvas('track-chart');
+  const pad = { l: 20, r: 20, t: 20, b: 36 };
+  const pw = w - pad.l - pad.r;
+  const ph = h - pad.t - pad.b;
+
+  ctx.fillStyle = '#0e0e0e'; ctx.fillRect(pad.l, pad.t, pw, ph);
+  gridLines(ctx, w, h, pad.l, pad.r, pad.t, pad.b);
+
+  // Synthetic flight path — approach from top-right to center-left
+  // Truth track (orange)
+  const truthPts = [];
+  const n = 60;
+  for (let i = 0; i < n; i++) {
+    const t = i / (n - 1);
+    // Curved approach from NE corner inward
+    const seed = (v) => { let x = Math.sin(v * 7919 + 1000) * 233280; return x - Math.floor(x); };
+    truthPts.push({
+      x: pad.l + pw * (0.85 - t * 0.6) + (seed(i) - 0.5) * 4,
+      y: pad.t + ph * (0.15 + t * 0.55) + (seed(i + 100) - 0.5) * 4,
+    });
+  }
+
+  // Sensor track — offset with lead bias on approach (sensor "sees" target earlier)
+  const sensorPts = truthPts.map((p, i) => {
+    const leadFactor = 0.04 * (1 - i / n); // lead decreases as drone approaches
+    const lateralBias = 8; // consistent lateral offset in pixels
+    return {
+      x: p.x - pw * leadFactor + lateralBias,
+      y: p.y - ph * leadFactor * 0.5,
+    };
+  });
+
+  // Draw connecting lines between tracks (error visualization)
+  for (let i = 0; i < n; i += 4) {
+    ctx.beginPath(); ctx.moveTo(truthPts[i].x, truthPts[i].y); ctx.lineTo(sensorPts[i].x, sensorPts[i].y);
+    ctx.strokeStyle = 'rgba(255,255,255,0.07)'; ctx.lineWidth = 0.8; ctx.stroke();
+  }
+
+  // Sensor track (blue)
+  ctx.beginPath();
+  sensorPts.forEach((p, i) => ctx[i === 0 ? 'moveTo' : 'lineTo'](p.x, p.y));
+  ctx.strokeStyle = '#4a9eff'; ctx.lineWidth = 2; ctx.stroke();
+
+  // Truth track (orange)
+  ctx.beginPath();
+  truthPts.forEach((p, i) => ctx[i === 0 ? 'moveTo' : 'lineTo'](p.x, p.y));
+  ctx.strokeStyle = '#f26115'; ctx.lineWidth = 2.5; ctx.stroke();
+
+  // Start/end markers
+  const startT = truthPts[0], endT = truthPts[n - 1];
+  ctx.beginPath(); ctx.arc(startT.x, startT.y, 5, 0, Math.PI * 2);
+  ctx.fillStyle = '#f26115'; ctx.fill();
+  ctx.beginPath(); ctx.arc(endT.x, endT.y, 5, 0, Math.PI * 2);
+  ctx.fillStyle = '#fff'; ctx.fill();
+
+  // Legend
+  const legX = pad.l + 10, legY = pad.t + 10;
+  ctx.beginPath(); ctx.moveTo(legX, legY + 6); ctx.lineTo(legX + 22, legY + 6);
+  ctx.strokeStyle = '#f26115'; ctx.lineWidth = 2.5; ctx.stroke();
+  ctx.fillStyle = 'rgba(255,255,255,0.5)'; ctx.font = '9px "Share Tech Mono", monospace';
+  ctx.fillText('Truth (RTK)', legX + 28, legY + 10);
+
+  ctx.beginPath(); ctx.moveTo(legX, legY + 22); ctx.lineTo(legX + 22, legY + 22);
+  ctx.strokeStyle = '#4a9eff'; ctx.lineWidth = 2; ctx.stroke();
+  ctx.fillText('Radar Track', legX + 28, legY + 26);
+
+  // Direction arrow
+  const arrowPt = truthPts[Math.floor(n * 0.6)];
+  const prev = truthPts[Math.floor(n * 0.6) - 3];
+  const angle = Math.atan2(arrowPt.y - prev.y, arrowPt.x - prev.x);
+  ctx.save(); ctx.translate(arrowPt.x, arrowPt.y); ctx.rotate(angle);
+  ctx.beginPath(); ctx.moveTo(0, 0); ctx.lineTo(-12, -5); ctx.lineTo(-12, 5); ctx.closePath();
+  ctx.fillStyle = '#f26115'; ctx.fill(); ctx.restore();
+
+  // Axis note
+  ctx.fillStyle = 'rgba(255,255,255,0.2)'; ctx.font = '9px "Share Tech Mono", monospace';
+  ctx.fillText('Top-down view · Approach profile · Not to scale', pad.l + pw / 2 - 100, pad.t + ph + 22);
+})();
+
+// ── Scroll animations ─────────────────────────────────────────
+const observer = new IntersectionObserver((entries) => {
+  entries.forEach(e => { if (e.isIntersecting) { e.target.classList.add('visible'); observer.unobserve(e.target); } });
+}, { threshold: 0.06 });
+document.querySelectorAll('.fade-in').forEach(el => observer.observe(el));
+</script>
+
+</body>
+</html>
