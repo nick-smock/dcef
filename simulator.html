@@ -1,0 +1,902 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Simulator — DCEF</title>
+  <meta name="description" content="DCEF Scenario Simulator — configure flight profiles and generate synthetic evaluation datasets in real time.">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@400;600;700;800&family=Barlow:wght@300;400;500;600&family=Share+Tech+Mono&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --orange:#f26115;--orange-dim:rgba(242,97,21,.12);--orange-mid:rgba(242,97,21,.4);
+      --black:#060606;--surface:#0e0e0e;--surface-2:#161616;--surface-3:#1c1c1c;
+      --border:rgba(255,255,255,.07);--border-orange:rgba(242,97,21,.3);
+      --text:#f0f0f0;--text-dim:#888;--text-dimmer:#444;
+      --blue:#4a9eff;--green:#4ade80;--red:#f87171;
+    }
+    *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+    html{scroll-behavior:smooth}
+    body{background:var(--black);color:var(--text);font-family:"Barlow",sans-serif;overflow-x:hidden;min-height:100vh}
+
+    /* NAV */
+    nav{position:fixed;top:0;left:0;right:0;z-index:100;display:flex;align-items:center;justify-content:space-between;padding:0 2.5rem;height:64px;background:rgba(6,6,6,.92);backdrop-filter:blur(12px);border-bottom:1px solid var(--border)}
+    .nav-icon{height:104px;width:auto;opacity:.95}
+    .nav-links{display:flex;gap:2.4rem;list-style:none}
+    .nav-links a{font-family:"Barlow Condensed",sans-serif;font-weight:600;font-size:.78rem;letter-spacing:.12em;text-transform:uppercase;color:var(--text-dim);text-decoration:none;transition:color .2s}
+    .nav-links a:hover,.nav-links a.active{color:var(--orange)}
+
+    /* PAGE HERO */
+    .page-hero{padding:140px 0 60px;background:var(--surface);border-bottom:1px solid var(--border);position:relative;overflow:hidden}
+    .page-hero::before{content:"SIMULATOR";position:absolute;right:-1rem;top:50%;transform:translateY(-50%);font-family:"Barlow Condensed",sans-serif;font-weight:800;font-size:clamp(5rem,12vw,11rem);color:rgba(255,255,255,.025);white-space:nowrap;pointer-events:none;line-height:1}
+    .page-hero .container{position:relative;z-index:1}
+    .breadcrumb{font-family:"Share Tech Mono",monospace;font-size:.68rem;letter-spacing:.2em;color:var(--text-dimmer);text-transform:uppercase;margin-bottom:1.4rem}
+    .breadcrumb a{color:var(--orange);text-decoration:none}
+    .page-hero h1{font-family:"Barlow Condensed",sans-serif;font-weight:800;font-size:clamp(3rem,6vw,5.5rem);text-transform:uppercase;letter-spacing:.03em;line-height:.95;margin-bottom:1.2rem}
+    .page-hero h1 span{color:var(--orange)}
+    .page-hero .lead{font-size:1.05rem;color:var(--text-dim);max-width:620px;line-height:1.75}
+
+    .container{max-width:1280px;margin:0 auto;padding:0 2.5rem}
+
+    /* SIMULATOR LAYOUT */
+    #sim-section{padding:3rem 0 6rem;background:var(--black)}
+
+    .sim-layout{display:grid;grid-template-columns:320px 1fr;gap:1.5rem;align-items:start}
+
+    /* CONTROL PANEL */
+    .control-panel{background:var(--surface);border:1px solid var(--border);display:flex;flex-direction:column;gap:0;position:sticky;top:80px}
+
+    .cp-header{padding:1.2rem 1.6rem;background:var(--surface-3);border-bottom:1px solid var(--border-orange);display:flex;align-items:center;justify-content:space-between}
+    .cp-title{font-family:"Barlow Condensed",sans-serif;font-weight:700;font-size:1rem;text-transform:uppercase;letter-spacing:.08em}
+    .cp-badge{font-family:"Share Tech Mono",monospace;font-size:.58rem;letter-spacing:.15em;color:var(--orange);border:1px solid var(--border-orange);padding:.15rem .5rem;text-transform:uppercase}
+
+    .cp-section{padding:1.2rem 1.6rem;border-bottom:1px solid var(--border)}
+    .cp-section-label{font-family:"Share Tech Mono",monospace;font-size:.6rem;letter-spacing:.2em;color:var(--orange);text-transform:uppercase;margin-bottom:.9rem}
+
+    /* Profile toggles */
+    .profile-grid{display:flex;flex-direction:column;gap:.5rem}
+    .profile-toggle{display:flex;align-items:center;gap:.75rem;padding:.7rem .9rem;background:var(--surface-2);border:1px solid var(--border);cursor:pointer;transition:all .2s;user-select:none}
+    .profile-toggle:hover{border-color:var(--border-orange)}
+    .profile-toggle.active{border-color:var(--orange);background:var(--orange-dim)}
+    .profile-toggle input{display:none}
+    .toggle-dot{width:8px;height:8px;border-radius:50%;border:1px solid var(--text-dimmer);flex-shrink:0;transition:all .2s}
+    .profile-toggle.active .toggle-dot{background:var(--orange);border-color:var(--orange)}
+    .toggle-label{font-family:"Barlow Condensed",sans-serif;font-weight:600;font-size:.9rem;text-transform:uppercase;letter-spacing:.06em}
+    .toggle-sub{font-family:"Share Tech Mono",monospace;font-size:.6rem;color:var(--text-dimmer);margin-left:auto}
+
+    /* Sliders */
+    .slider-group{margin-bottom:1rem}
+    .slider-group:last-child{margin-bottom:0}
+    .slider-top{display:flex;justify-content:space-between;align-items:baseline;margin-bottom:.5rem}
+    .slider-label{font-size:.85rem;color:var(--text-dim)}
+    .slider-val{font-family:"Share Tech Mono",monospace;font-size:.82rem;color:var(--orange)}
+    input[type=range]{width:100%;-webkit-appearance:none;appearance:none;height:2px;background:var(--border);outline:none;cursor:pointer}
+    input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:14px;height:14px;background:var(--orange);border-radius:50%;cursor:pointer;transition:transform .15s}
+    input[type=range]::-webkit-slider-thumb:hover{transform:scale(1.2)}
+
+    /* Sensor type */
+    .sensor-grid{display:grid;grid-template-columns:1fr 1fr;gap:.4rem}
+    .sensor-btn{font-family:"Share Tech Mono",monospace;font-size:.65rem;letter-spacing:.1em;text-transform:uppercase;padding:.5rem .6rem;background:var(--surface-2);border:1px solid var(--border);color:var(--text-dim);cursor:pointer;transition:all .2s;text-align:center}
+    .sensor-btn:hover{border-color:var(--border-orange);color:var(--orange)}
+    .sensor-btn.active{background:var(--orange-dim);border-color:var(--orange);color:var(--orange)}
+
+    /* Tier selector */
+    .tier-selector{display:flex;gap:0}
+    .tier-btn{flex:1;font-family:"Share Tech Mono",monospace;font-size:.65rem;letter-spacing:.1em;text-transform:uppercase;padding:.55rem .3rem;background:var(--surface-2);border:1px solid var(--border);color:var(--text-dim);cursor:pointer;transition:all .2s;text-align:center;margin-left:-1px}
+    .tier-btn:first-child{margin-left:0}
+    .tier-btn:hover{border-color:var(--border-orange);color:var(--orange);z-index:1}
+    .tier-btn.active{background:var(--orange-dim);border-color:var(--orange);color:var(--orange);z-index:2}
+
+    /* Generate button */
+    .gen-btn{margin:1.2rem 1.6rem;padding:1rem;background:var(--orange);color:#fff;border:none;font-family:"Barlow Condensed",sans-serif;font-weight:700;font-size:1rem;letter-spacing:.14em;text-transform:uppercase;cursor:pointer;transition:background .2s,transform .15s;display:flex;align-items:center;justify-content:center;gap:.6rem}
+    .gen-btn:hover{background:#d44f0a;transform:translateY(-1px)}
+    .gen-btn:active{transform:translateY(0)}
+    .gen-btn svg{width:16px;height:16px;fill:none;stroke:#fff;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+    .gen-btn.running{background:var(--surface-3);color:var(--text-dim);cursor:default;transform:none}
+
+    /* RIGHT SIDE */
+    .sim-right{display:flex;flex-direction:column;gap:1.5rem}
+
+    /* Canvas */
+    .canvas-wrap{background:var(--surface-3);border:1px solid var(--border);position:relative;overflow:hidden}
+    #sim-canvas{display:block;width:100%}
+    .canvas-top-bar{display:flex;justify-content:space-between;align-items:center;padding:.7rem 1.2rem;background:var(--surface-2);border-bottom:1px solid var(--border)}
+    .canvas-label{font-family:"Share Tech Mono",monospace;font-size:.62rem;letter-spacing:.15em;color:var(--text-dim);text-transform:uppercase}
+    .canvas-status{font-family:"Share Tech Mono",monospace;font-size:.62rem;letter-spacing:.12em;text-transform:uppercase;padding:.18rem .55rem;border:1px solid}
+    .canvas-status.idle{color:var(--text-dimmer);border-color:var(--text-dimmer)}
+    .canvas-status.running{color:var(--orange);border-color:var(--border-orange);animation:blink 1s ease-in-out infinite}
+    .canvas-status.complete{color:var(--green);border-color:rgba(74,222,128,.3)}
+    @keyframes blink{0%,100%{opacity:1}50%{opacity:.4}}
+
+    /* Legend */
+    .canvas-legend{display:flex;gap:1.5rem;padding:.65rem 1.2rem;background:var(--surface-2);border-top:1px solid var(--border)}
+    .leg-item{display:flex;align-items:center;gap:.45rem;font-family:"Share Tech Mono",monospace;font-size:.6rem;letter-spacing:.1em;color:var(--text-dim)}
+    .leg-dot{width:8px;height:8px;border-radius:50%;flex-shrink:0}
+
+    /* Output cards */
+    .output-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:1px;background:var(--border);border:1px solid var(--border)}
+    .output-card{background:var(--surface);padding:1.4rem 1.6rem;transition:background .2s}
+    .output-card:hover{background:var(--surface-2)}
+    .oc-label{font-family:"Share Tech Mono",monospace;font-size:.58rem;letter-spacing:.18em;color:var(--text-dimmer);text-transform:uppercase;margin-bottom:.5rem}
+    .oc-val{font-family:"Barlow Condensed",sans-serif;font-weight:800;font-size:2.2rem;color:var(--orange);line-height:1;margin-bottom:.2rem}
+    .oc-val.dim{color:var(--text-dimmer);font-size:1.6rem}
+    .oc-unit{font-family:"Share Tech Mono",monospace;font-size:.65rem;color:var(--text-dim);letter-spacing:.1em}
+    .oc-desc{font-size:.8rem;color:var(--text-dimmer);line-height:1.5;margin-top:.4rem}
+
+    /* Download bar */
+    .download-bar{display:flex;align-items:center;justify-content:space-between;padding:1.2rem 1.6rem;background:var(--surface);border:1px solid var(--border)}
+    .dl-info{font-size:.88rem;color:var(--text-dim);line-height:1.5}
+    .dl-info strong{color:var(--text);font-weight:500}
+    .dl-btn{display:flex;align-items:center;gap:.6rem;background:transparent;border:1px solid var(--border-orange);color:var(--orange);font-family:"Barlow Condensed",sans-serif;font-weight:700;font-size:.82rem;letter-spacing:.12em;text-transform:uppercase;padding:.7rem 1.4rem;cursor:pointer;transition:all .2s;text-decoration:none}
+    .dl-btn:hover{background:var(--orange-dim)}
+    .dl-btn svg{width:14px;height:14px;fill:none;stroke:var(--orange);stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+    .dl-btn.disabled{opacity:.3;pointer-events:none}
+
+    /* Telemetry strip */
+    .telem-strip{display:flex;gap:1px;background:var(--border);border:1px solid var(--border);overflow:hidden}
+    .telem-cell{background:var(--surface);padding:.8rem 1.2rem;flex:1;min-width:0}
+    .tc-key{font-family:"Share Tech Mono",monospace;font-size:.55rem;letter-spacing:.18em;color:var(--text-dimmer);text-transform:uppercase;margin-bottom:.25rem}
+    .tc-val{font-family:"Share Tech Mono",monospace;font-size:.82rem;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+    .tc-val.orange{color:var(--orange)}
+    .tc-val.green{color:var(--green)}
+    .tc-val.dim{color:var(--text-dimmer)}
+
+    footer{background:var(--surface);border-top:1px solid var(--border);padding:2.4rem 0;margin-top:4rem}
+    .footer-inner{display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:1.5rem}
+    .footer-left{display:flex;align-items:center;gap:1.2rem}
+    .footer-icon{height:28px;width:auto;opacity:.6}
+    .footer-text{font-family:"Share Tech Mono",monospace;font-size:.7rem;letter-spacing:.12em;color:var(--text-dimmer);line-height:1.7}
+    .footer-text strong{color:var(--text-dim);font-weight:400}
+    .footer-right{display:flex;align-items:center;gap:2rem}
+    .footer-link{display:flex;align-items:center;gap:.5rem;font-family:"Barlow Condensed",sans-serif;font-weight:600;font-size:.78rem;letter-spacing:.14em;text-transform:uppercase;color:var(--text-dim);text-decoration:none;transition:color .2s}
+    .footer-link:hover{color:var(--orange)}
+    .footer-link svg{width:16px;height:16px;fill:currentColor}
+  </style>
+</head>
+<body>
+
+<nav>
+  <a href="index.html"><img src="icon.svg" alt="DCEF" class="nav-icon"></a>
+  <ul class="nav-links">
+    <li><a href="framework.html">Framework</a></li>
+    <li><a href="research.html">Research</a></li>
+    <li><a href="data.html">Data</a></li>
+    <li><a href="tools.html">Tools</a></li>
+    <li><a href="references.html">References</a></li>
+    <li><a href="simulator.html" class="active">Simulator</a></li>
+  </ul>
+</nav>
+
+<div class="page-hero">
+  <div class="container">
+    <div class="breadcrumb"><a href="index.html">DCEF</a> / Simulator</div>
+    <h1>Scenario<br><span>Simulator</span></h1>
+    <p class="lead">Configure a threat emulation flight profile, generate a synthetic evaluation scenario, and download a DCEF-schema CSV — all in the browser. No Python required.</p>
+  </div>
+</div>
+
+<section id="sim-section">
+  <div class="container">
+    <div class="sim-layout">
+
+      <!-- CONTROL PANEL -->
+      <div class="control-panel">
+        <div class="cp-header">
+          <span class="cp-title">Scenario Config</span>
+          <span class="cp-badge">Synthetic</span>
+        </div>
+
+        <!-- Flight profiles -->
+        <div class="cp-section">
+          <div class="cp-section-label">Flight Profiles</div>
+          <div class="profile-grid">
+            <label class="profile-toggle active" id="tog-approach">
+              <input type="checkbox" checked>
+              <div class="toggle-dot"></div>
+              <span class="toggle-label">Approach</span>
+              <span class="toggle-sub">Max → 50m</span>
+            </label>
+            <label class="profile-toggle active" id="tog-hover">
+              <input type="checkbox" checked>
+              <div class="toggle-dot"></div>
+              <span class="toggle-label">Hover</span>
+              <span class="toggle-sub">30 sec</span>
+            </label>
+            <label class="profile-toggle" id="tog-orbit">
+              <input type="checkbox">
+              <div class="toggle-dot"></div>
+              <span class="toggle-label">Orbit</span>
+              <span class="toggle-sub">360° circle</span>
+            </label>
+          </div>
+        </div>
+
+        <!-- Range slider -->
+        <div class="cp-section">
+          <div class="cp-section-label">Parameters</div>
+          <div class="slider-group">
+            <div class="slider-top">
+              <span class="slider-label">Max Range</span>
+              <span class="slider-val" id="val-range">500 m</span>
+            </div>
+            <input type="range" id="sl-range" min="100" max="800" value="500" step="25">
+          </div>
+          <div class="slider-group">
+            <div class="slider-top">
+              <span class="slider-label">Number of Passes</span>
+              <span class="slider-val" id="val-passes">3</span>
+            </div>
+            <input type="range" id="sl-passes" min="1" max="10" value="3" step="1">
+          </div>
+          <div class="slider-group">
+            <div class="slider-top">
+              <span class="slider-label">Drone Speed</span>
+              <span class="slider-val" id="val-speed">8 m/s</span>
+            </div>
+            <input type="range" id="sl-speed" min="2" max="20" value="8" step="1">
+          </div>
+        </div>
+
+        <!-- Sensor type -->
+        <div class="cp-section">
+          <div class="cp-section-label">Sensor Type</div>
+          <div class="sensor-grid">
+            <button class="sensor-btn active" data-sensor="RADAR">Radar</button>
+            <button class="sensor-btn" data-sensor="OPTICAL">Optical</button>
+            <button class="sensor-btn" data-sensor="ACOUSTIC">Acoustic</button>
+            <button class="sensor-btn" data-sensor="RF">RF</button>
+          </div>
+        </div>
+
+        <!-- DCEF Tier -->
+        <div class="cp-section">
+          <div class="cp-section-label">DCEF Accuracy Tier</div>
+          <div class="tier-selector">
+            <button class="tier-btn" data-tier="1">Tier 1<br><span style="font-size:.55rem;color:var(--text-dimmer)">≤3m</span></button>
+            <button class="tier-btn active" data-tier="2">Tier 2<br><span style="font-size:.55rem;color:var(--text-dimmer)">≤30cm</span></button>
+            <button class="tier-btn" data-tier="3">Tier 3<br><span style="font-size:.55rem;color:var(--text-dimmer)">≤5cm</span></button>
+            <button class="tier-btn" data-tier="0">Auto</button>
+          </div>
+        </div>
+
+        <button class="gen-btn" id="gen-btn" onclick="runSimulation()">
+          <svg viewBox="0 0 24 24"><polygon points="5 3 19 12 5 21 5 3"/></svg>
+          Generate Scenario
+        </button>
+      </div>
+
+      <!-- RIGHT SIDE -->
+      <div class="sim-right">
+
+        <!-- Canvas -->
+        <div class="canvas-wrap">
+          <div class="canvas-top-bar">
+            <span class="canvas-label">Top-Down View &middot; WGS84 &middot; Synthetic</span>
+            <span class="canvas-status idle" id="sim-status">IDLE</span>
+          </div>
+          <canvas id="sim-canvas" height="480"></canvas>
+          <div class="canvas-legend">
+            <div class="leg-item"><div class="leg-dot" style="background:#f26115"></div>Truth track (RTK ground truth)</div>
+            <div class="leg-item"><div class="leg-dot" style="background:#4a9eff"></div>Sensor-reported track</div>
+            <div class="leg-item"><div class="leg-dot" style="background:rgba(255,255,255,.2);border-radius:0;width:16px;height:1px;margin:auto 0"></div>Range rings (100m steps)</div>
+            <div class="leg-item"><div class="leg-dot" style="background:#4ade80"></div>Detection event</div>
+            <div class="leg-item"><div class="leg-dot" style="background:#888"></div>No-detect</div>
+          </div>
+        </div>
+
+        <!-- Live telemetry strip -->
+        <div class="telem-strip">
+          <div class="telem-cell"><div class="tc-key">Timestamp</div><div class="tc-val dim" id="t-ts">&mdash;</div></div>
+          <div class="telem-cell"><div class="tc-key">Range</div><div class="tc-val orange" id="t-range">&mdash;</div></div>
+          <div class="telem-cell"><div class="tc-key">Pos Error</div><div class="tc-val" id="t-err">&mdash;</div></div>
+          <div class="telem-cell"><div class="tc-key">Detection</div><div class="tc-val dim" id="t-det">&mdash;</div></div>
+          <div class="telem-cell"><div class="tc-key">Phase</div><div class="tc-val dim" id="t-phase">&mdash;</div></div>
+          <div class="telem-cell"><div class="tc-key">Speed</div><div class="tc-val" id="t-spd">&mdash;</div></div>
+        </div>
+
+        <!-- Output cards -->
+        <div class="output-grid">
+          <div class="output-card">
+            <div class="oc-label">Total Records</div>
+            <div class="oc-val dim" id="oc-records">&mdash;</div>
+            <div class="oc-unit">@ 1 Hz</div>
+            <div class="oc-desc">Correlated telemetry + sensor records in this scenario</div>
+          </div>
+          <div class="output-card">
+            <div class="oc-label">Rec. Tier</div>
+            <div class="oc-val dim" id="oc-tier">&mdash;</div>
+            <div class="oc-unit" id="oc-tier-cep">&mdash;</div>
+            <div class="oc-desc">Based on max range and defeat geometry requirements</div>
+          </div>
+          <div class="output-card">
+            <div class="oc-label">PoD @ Max Range</div>
+            <div class="oc-val dim" id="oc-pod">&mdash;</div>
+            <div class="oc-unit">probability</div>
+            <div class="oc-desc">Estimated detection probability at the outermost range bin</div>
+          </div>
+          <div class="output-card">
+            <div class="oc-label">Mean Pos Error</div>
+            <div class="oc-val dim" id="oc-err">&mdash;</div>
+            <div class="oc-unit">meters</div>
+            <div class="oc-desc">Expected mean horizontal position error across all records</div>
+          </div>
+        </div>
+
+        <!-- Download bar -->
+        <div class="download-bar">
+          <div class="dl-info">
+            <strong id="dl-filename">No scenario generated yet</strong><br>
+            Configure a scenario above and click Generate to produce a downloadable DCEF-schema CSV.
+          </div>
+          <button class="dl-btn disabled" id="dl-btn" onclick="downloadCSV()">
+            <svg viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+            Download CSV
+          </button>
+        </div>
+
+      </div>
+    </div>
+  </div>
+</section>
+
+<footer>
+  <div class="container">
+    <div class="footer-inner">
+      <div class="footer-left">
+        <img src="icon.svg" alt="DCEF" class="footer-icon">
+        <div class="footer-text">
+          <strong>DCEF &mdash; Distributed C-UAS Evaluation Framework</strong><br>
+          Wayne State University &middot; Master of Science in Systems Engineering<br>
+          SYE 6942 Capstone Research Project
+        </div>
+      </div>
+      <div class="footer-right">
+        <a href="https://github.com/nick-smock/dcef" class="footer-link" target="_blank" rel="noopener">
+          <svg viewBox="0 0 24 24"><path d="M9 19c-5 1.5-5-2.5-7-3m14 6v-3.87a3.37 3.37 0 0 0-.94-2.61c3.14-.35 6.44-1.54 6.44-7A5.44 5.44 0 0 0 20 4.77 5.07 5.07 0 0 0 19.91 1S18.73.65 16 2.48a13.38 13.38 0 0 0-7 0C6.27.65 5.09 1 5.09 1A5.07 5.07 0 0 0 5 4.77a5.44 5.44 0 0 0-1.5 3.78c0 5.42 3.3 6.61 6.44 7A3.37 3.37 0 0 0 9 18.13V22"/></svg>
+          GitHub
+        </a>
+      </div>
+    </div>
+  </div>
+</footer>
+
+<script>
+// ── STATE ─────────────────────────────────────────────────
+var simRecords = [];
+var animFrame = null;
+var animIdx = 0;
+var isRunning = false;
+
+// ── CONTROLS ──────────────────────────────────────────────
+document.querySelectorAll('.profile-toggle').forEach(function(tog) {
+  tog.addEventListener('click', function() {
+    this.classList.toggle('active');
+    this.querySelector('input').checked = this.classList.contains('active');
+  });
+});
+
+document.getElementById('sl-range').addEventListener('input', function() {
+  document.getElementById('val-range').textContent = this.value + ' m';
+  autoTier(parseInt(this.value));
+});
+document.getElementById('sl-passes').addEventListener('input', function() {
+  document.getElementById('val-passes').textContent = this.value;
+});
+document.getElementById('sl-speed').addEventListener('input', function() {
+  document.getElementById('val-speed').textContent = this.value + ' m/s';
+});
+
+document.querySelectorAll('.sensor-btn').forEach(function(btn) {
+  btn.addEventListener('click', function() {
+    document.querySelectorAll('.sensor-btn').forEach(function(b){ b.classList.remove('active'); });
+    this.classList.add('active');
+  });
+});
+
+document.querySelectorAll('.tier-btn').forEach(function(btn) {
+  btn.addEventListener('click', function() {
+    document.querySelectorAll('.tier-btn').forEach(function(b){ b.classList.remove('active'); });
+    this.classList.add('active');
+  });
+});
+
+function autoTier(range) {
+  var autoBtn = document.querySelector('.tier-btn[data-tier="0"]');
+  if (autoBtn && autoBtn.classList.contains('active')) {
+    // Auto mode — suggest based on range
+  }
+}
+
+function getActiveTier() {
+  var active = document.querySelector('.tier-btn.active');
+  var t = parseInt(active ? active.dataset.tier : 2);
+  if (t === 0) {
+    var range = parseInt(document.getElementById('sl-range').value);
+    if (range > 500) return 3;
+    if (range > 250) return 2;
+    return 1;
+  }
+  return t;
+}
+
+function getConfig() {
+  return {
+    approach: document.getElementById('tog-approach').classList.contains('active'),
+    hover:    document.getElementById('tog-hover').classList.contains('active'),
+    orbit:    document.getElementById('tog-orbit').classList.contains('active'),
+    maxRange: parseInt(document.getElementById('sl-range').value),
+    passes:   parseInt(document.getElementById('sl-passes').value),
+    speed:    parseInt(document.getElementById('sl-speed').value),
+    sensor:   document.querySelector('.sensor-btn.active').dataset.sensor,
+    tier:     getActiveTier(),
+  };
+}
+
+// ── CANVAS ────────────────────────────────────────────────
+var canvas = document.getElementById('sim-canvas');
+var ctx = canvas.getContext('2d');
+var W, H, scale, ox, oy;
+var dpr = window.devicePixelRatio || 1;
+
+function setupCanvas() {
+  var rect = canvas.parentElement.getBoundingClientRect();
+  W = rect.width;
+  H = 480;
+  canvas.width = W * dpr;
+  canvas.height = H * dpr;
+  canvas.style.width = W + 'px';
+  canvas.style.height = H + 'px';
+  ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+  ox = W / 2;
+  oy = H / 2 + 30;
+}
+
+function mToCanvas(mx, my) {
+  return { x: ox + mx * scale, y: oy - my * scale };
+}
+
+function setScale(maxRange) {
+  scale = Math.min((W * 0.38) / maxRange, (H * 0.42) / maxRange);
+}
+
+function drawBase(maxRange) {
+  ctx.clearRect(0, 0, W, H);
+  ctx.fillStyle = '#0e0e0e';
+  ctx.fillRect(0, 0, W, H);
+
+  // Grid
+  ctx.strokeStyle = 'rgba(255,255,255,0.03)';
+  ctx.lineWidth = 0.5;
+  for (var gx = 0; gx < W; gx += 40) { ctx.beginPath(); ctx.moveTo(gx,0); ctx.lineTo(gx,H); ctx.stroke(); }
+  for (var gy = 0; gy < H; gy += 40) { ctx.beginPath(); ctx.moveTo(0,gy); ctx.lineTo(W,gy); ctx.stroke(); }
+
+  // Range rings
+  var step = maxRange <= 200 ? 50 : maxRange <= 400 ? 100 : 100;
+  for (var r = step; r <= maxRange + step; r += step) {
+    var rPx = r * scale;
+    ctx.beginPath();
+    ctx.arc(ox, oy, rPx, 0, Math.PI * 2);
+    ctx.strokeStyle = r <= maxRange ? 'rgba(242,97,21,0.08)' : 'rgba(255,255,255,0.03)';
+    ctx.lineWidth = 0.7;
+    ctx.setLineDash([3, 6]);
+    ctx.stroke();
+    ctx.setLineDash([]);
+    ctx.fillStyle = 'rgba(255,255,255,0.15)';
+    ctx.font = '9px "Share Tech Mono", monospace';
+    ctx.fillText(r + 'm', ox + rPx + 4, oy - 3);
+  }
+
+  // North arrow
+  ctx.save();
+  ctx.translate(W - 36, 36);
+  ctx.strokeStyle = 'rgba(255,255,255,0.25)';
+  ctx.lineWidth = 1;
+  ctx.beginPath(); ctx.moveTo(0, 10); ctx.lineTo(0, -10); ctx.stroke();
+  ctx.beginPath(); ctx.moveTo(0,-10); ctx.lineTo(-4,-3); ctx.stroke();
+  ctx.beginPath(); ctx.moveTo(0,-10); ctx.lineTo(4,-3); ctx.stroke();
+  ctx.fillStyle = 'rgba(255,255,255,0.2)';
+  ctx.font = '9px "Share Tech Mono"'; ctx.textAlign = 'center';
+  ctx.fillText('N', 0, -14); ctx.restore();
+  ctx.textAlign = 'left';
+
+  // Sensor origin
+  ctx.beginPath(); ctx.arc(ox, oy, 7, 0, Math.PI * 2);
+  ctx.fillStyle = 'rgba(242,97,21,0.15)'; ctx.fill();
+  ctx.strokeStyle = 'rgba(242,97,21,0.6)'; ctx.lineWidth = 1.5; ctx.stroke();
+  ctx.fillStyle = 'rgba(242,97,21,0.6)';
+  ctx.font = '9px "Share Tech Mono"';
+  ctx.fillText('SENSOR', ox + 12, oy + 4);
+}
+
+// ── FLIGHT PATH GENERATION ────────────────────────────────
+function generateFlightPath(cfg) {
+  var records = [];
+  var t = 0;
+  var SITE_LAT = 35.1240, SITE_LON = -117.8860;
+  var LAT_M = 111320, LON_M = 111320 * Math.cos(SITE_LAT * Math.PI / 180);
+  var seed = 42;
+
+  function rand() {
+    seed = (seed * 1664525 + 1013904223) & 0xffffffff;
+    return (seed >>> 0) / 0xffffffff;
+  }
+  function randn() {
+    var u = rand() + 0.0001, v = rand() + 0.0001;
+    return Math.sqrt(-2 * Math.log(u)) * Math.cos(2 * Math.PI * v);
+  }
+  function haversine(lat1, lon1, lat2, lon2) {
+    var R = 6371000;
+    var dLat = (lat2-lat1)*Math.PI/180;
+    var dLon = (lon2-lon1)*Math.PI/180;
+    var a = Math.sin(dLat/2)*Math.sin(dLat/2)+Math.cos(lat1*Math.PI/180)*Math.cos(lat2*Math.PI/180)*Math.sin(dLon/2)*Math.sin(dLon/2);
+    return R*2*Math.atan2(Math.sqrt(a),Math.sqrt(1-a));
+  }
+
+  // Sensor error model
+  function sensorError(rangem, hdg, sensorType) {
+    var base = 1.5 + (rangem / cfg.maxRange) * 6.5;
+    var dirFactor = 1 + 0.35 * Math.sin((hdg - 160) * Math.PI / 180);
+    var typeMultiplier = sensorType === 'RADAR' ? 1.0 : sensorType === 'OPTICAL' ? 0.7 : sensorType === 'ACOUSTIC' ? 2.2 : 1.4;
+    return Math.max(0.3, base * dirFactor * typeMultiplier + randn() * base * 0.3);
+  }
+
+  function detectionProb(rangem, sensorType) {
+    var eff = sensorType === 'RADAR' ? 1.0 : sensorType === 'OPTICAL' ? 0.85 : sensorType === 'ACOUSTIC' ? 0.6 : 0.75;
+    var ratio = rangem / cfg.maxRange;
+    if (ratio < 0.5) return 0.97 * eff;
+    if (ratio < 0.7) return 0.93 * eff;
+    if (ratio < 0.85) return 0.80 * eff;
+    if (ratio < 0.95) return 0.62 * eff;
+    return 0.40 * eff;
+  }
+
+  function addRecord(mx, my, phase, hdg, spd) {
+    var lat = SITE_LAT + my / LAT_M;
+    var lon = SITE_LON + mx / LON_M;
+    var rangem = Math.sqrt(mx*mx + my*my);
+    var errM = sensorError(rangem, hdg, cfg.sensor);
+    var errAngle = rand() * 2 * Math.PI;
+    var northBias = 0.8 + (rangem / cfg.maxRange) * 1.5;
+    var sLat = lat + (errM * Math.cos(errAngle) + northBias) / LAT_M;
+    var sLon = lon + errM * Math.sin(errAngle) / LON_M;
+    var det = rand() < detectionProb(rangem, cfg.sensor);
+    var rf = rand() < 0.03 ? parseFloat((rand() * 2).toFixed(2)) : 0;
+
+    // Timestamp
+    var baseDate = new Date('2024-09-15T14:00:00Z');
+    baseDate.setSeconds(baseDate.getSeconds() + t);
+    var ts = baseDate.toISOString().replace('T', ' ').substring(0, 19);
+
+    records.push({
+      timestamp_utc: ts,
+      lat_truth: lat.toFixed(8),
+      lon_truth: lon.toFixed(8),
+      alt_agl_m: (50 + randn() * 0.4).toFixed(1),
+      hdg_deg: (hdg % 360).toFixed(1),
+      gnd_speed_ms: Math.max(0, spd + randn() * 0.3).toFixed(2),
+      sensor_lat: sLat.toFixed(8),
+      sensor_lon: sLon.toFixed(8),
+      sensor_type: cfg.sensor,
+      detection_flag: det,
+      range_m: rangem.toFixed(1),
+      pos_error_m: haversine(lat, lon, sLat, sLon).toFixed(2),
+      tier: cfg.tier,
+      rf_packet_loss_pct: rf,
+      site_id: 'SITE-SIM',
+      // canvas coords for animation
+      _mx: mx, _my: my, _smx: (sLon - SITE_LON) * LON_M, _smy: (sLat - SITE_LAT) * LAT_M,
+      _det: det, _phase: phase, _t: t,
+    });
+    t++;
+  }
+
+  for (var pass = 0; pass < cfg.passes; pass++) {
+    var startAngle = (pass * 137.5) % 360; // golden angle spread
+    var bearing = startAngle * Math.PI / 180;
+
+    // APPROACH
+    if (cfg.approach) {
+      var steps = Math.round(cfg.maxRange / cfg.speed);
+      for (var i = 0; i <= steps; i++) {
+        var frac = 1 - (i / steps);
+        var dist = frac * cfg.maxRange + (1 - frac) * 50;
+        var mx = Math.cos(bearing) * dist + randn() * 2;
+        var my = Math.sin(bearing) * dist + randn() * 2;
+        var hdg = (Math.atan2(-Math.sin(bearing), -Math.cos(bearing)) * 180 / Math.PI + 360) % 360;
+        addRecord(mx, my, 'APPROACH', hdg, cfg.speed);
+      }
+    }
+
+    // HOVER
+    if (cfg.hover) {
+      var hDist = Math.max(50, cfg.maxRange * 0.35);
+      var hx = Math.cos(bearing) * hDist;
+      var hy = Math.sin(bearing) * hDist;
+      for (var h = 0; h < 30; h++) {
+        addRecord(hx + randn() * 1.5, hy + randn() * 1.5, 'HOVER', rand() * 360, 0.2);
+      }
+    }
+
+    // ORBIT
+    if (cfg.orbit) {
+      var oDist = Math.max(80, cfg.maxRange * 0.6);
+      var oSteps = Math.round(2 * Math.PI * oDist / cfg.speed);
+      for (var o = 0; o <= oSteps; o++) {
+        var angle = (o / oSteps) * 2 * Math.PI + bearing;
+        var omx = Math.cos(angle) * oDist + randn() * 1.5;
+        var omy = Math.sin(angle) * oDist + randn() * 1.5;
+        var ohdg = (angle * 180 / Math.PI + 90) % 360;
+        addRecord(omx, omy, 'ORBIT', ohdg, cfg.speed);
+      }
+    }
+  }
+
+  return records;
+}
+
+// ── ANIMATION ─────────────────────────────────────────────
+var truthTrail = [], sensorTrail = [];
+var TRAIL = 40;
+
+function animateSim(records, maxRange, frameStart) {
+  if (animIdx >= records.length) {
+    setStatus('complete');
+    setGenBtn(false);
+    isRunning = false;
+    updateOutputCards(records, maxRange);
+    enableDownload(records);
+    return;
+  }
+
+  // Speed: advance multiple records per frame for long scenarios
+  var step = Math.max(1, Math.floor(records.length / 400));
+
+  for (var s = 0; s < step && animIdx < records.length; s++) {
+    var r = records[animIdx];
+    var tp = mToCanvas(r._mx, r._my);
+    var sp = mToCanvas(r._smx, r._smy);
+    truthTrail.push(tp);
+    sensorTrail.push(sp);
+    if (truthTrail.length > TRAIL) { truthTrail.shift(); sensorTrail.shift(); }
+    animIdx++;
+  }
+
+  var cur = records[Math.min(animIdx - 1, records.length - 1)];
+
+  // Redraw
+  drawBase(maxRange);
+
+  // Full ghost path
+  ctx.beginPath();
+  records.forEach(function(rec, i) {
+    var p = mToCanvas(rec._mx, rec._my);
+    i === 0 ? ctx.moveTo(p.x, p.y) : ctx.lineTo(p.x, p.y);
+  });
+  ctx.strokeStyle = 'rgba(242,97,21,0.06)'; ctx.lineWidth = 1; ctx.stroke();
+
+  // Sensor ghost
+  ctx.beginPath();
+  records.forEach(function(rec, i) {
+    var p = mToCanvas(rec._smx, rec._smy);
+    i === 0 ? ctx.moveTo(p.x, p.y) : ctx.lineTo(p.x, p.y);
+  });
+  ctx.strokeStyle = 'rgba(74,158,255,0.04)'; ctx.lineWidth = 1; ctx.stroke();
+
+  // Truth trail
+  for (var i = 1; i < truthTrail.length; i++) {
+    var alpha = 0.15 + 0.85 * (i / truthTrail.length);
+    ctx.beginPath();
+    ctx.moveTo(truthTrail[i-1].x, truthTrail[i-1].y);
+    ctx.lineTo(truthTrail[i].x, truthTrail[i].y);
+    ctx.strokeStyle = 'rgba(242,97,21,' + alpha + ')'; ctx.lineWidth = 2; ctx.stroke();
+  }
+
+  // Sensor trail
+  for (var i = 1; i < sensorTrail.length; i++) {
+    var alpha = 0.08 + 0.4 * (i / sensorTrail.length);
+    ctx.beginPath();
+    ctx.moveTo(sensorTrail[i-1].x, sensorTrail[i-1].y);
+    ctx.lineTo(sensorTrail[i].x, sensorTrail[i].y);
+    ctx.strokeStyle = 'rgba(74,158,255,' + alpha + ')'; ctx.lineWidth = 1.2; ctx.stroke();
+  }
+
+  // Detection dots along path
+  var shown = records.slice(0, animIdx);
+  shown.forEach(function(rec) {
+    var p = mToCanvas(rec._mx, rec._my);
+    ctx.beginPath(); ctx.arc(p.x, p.y, 2.5, 0, Math.PI * 2);
+    ctx.fillStyle = rec._det ? 'rgba(74,222,128,0.7)' : 'rgba(136,136,136,0.3)';
+    ctx.fill();
+  });
+
+  // Error line current
+  var tp = mToCanvas(cur._mx, cur._my);
+  var sp = mToCanvas(cur._smx, cur._smy);
+  ctx.beginPath(); ctx.moveTo(tp.x, tp.y); ctx.lineTo(sp.x, sp.y);
+  ctx.strokeStyle = 'rgba(255,255,255,0.12)'; ctx.lineWidth = 1;
+  ctx.setLineDash([3,4]); ctx.stroke(); ctx.setLineDash([]);
+
+  // Current drone
+  var pulse = (Date.now() % 1200) / 1200;
+  if (cur._det) {
+    ctx.beginPath(); ctx.arc(tp.x, tp.y, 7 + pulse*12, 0, Math.PI*2);
+    ctx.strokeStyle = 'rgba(74,222,128,' + (0.5*(1-pulse)) + ')'; ctx.lineWidth = 1.2; ctx.stroke();
+  }
+  ctx.beginPath(); ctx.arc(tp.x, tp.y, cur._det ? 6 : 5, 0, Math.PI*2);
+  ctx.fillStyle = cur._det ? '#4ade80' : '#888'; ctx.fill();
+
+  // Heading line
+  var hdgRad = (cur.hdg_deg - 90) * Math.PI / 180;
+  ctx.beginPath(); ctx.moveTo(tp.x, tp.y);
+  ctx.lineTo(tp.x + Math.cos(hdgRad)*18, tp.y + Math.sin(hdgRad)*18);
+  ctx.strokeStyle = 'rgba(242,97,21,0.7)'; ctx.lineWidth = 1.5; ctx.stroke();
+
+  // Sensor dot
+  ctx.beginPath(); ctx.arc(sp.x, sp.y, 4, 0, Math.PI*2);
+  ctx.fillStyle = '#4a9eff'; ctx.fill();
+
+  // Phase label
+  ctx.fillStyle = 'rgba(255,255,255,0.2)';
+  ctx.font = '9px "Share Tech Mono"';
+  ctx.fillText(cur._phase, 12, H - 14);
+
+  // Progress bar
+  var pct = animIdx / records.length;
+  ctx.fillStyle = 'rgba(242,97,21,0.12)';
+  ctx.fillRect(0, H - 2, W, 2);
+  ctx.fillStyle = 'rgba(242,97,21,0.7)';
+  ctx.fillRect(0, H - 2, W * pct, 2);
+
+  // Update telemetry strip
+  updateTelem(cur);
+
+  animFrame = requestAnimationFrame(function() { animateSim(records, maxRange, frameStart); });
+}
+
+function updateTelem(r) {
+  var ts = r.timestamp_utc ? r.timestamp_utc.replace('2024-09-15 ', '') : '—';
+  document.getElementById('t-ts').textContent = ts;
+  document.getElementById('t-range').textContent = parseFloat(r.range_m).toFixed(0) + ' m';
+  document.getElementById('t-err').textContent = parseFloat(r.pos_error_m).toFixed(2) + ' m';
+  var detEl = document.getElementById('t-det');
+  detEl.textContent = r._det ? 'DETECTED' : 'NO DETECT';
+  detEl.className = 'tc-val ' + (r._det ? 'green' : 'dim');
+  document.getElementById('t-phase').textContent = r._phase;
+  document.getElementById('t-spd').textContent = parseFloat(r.gnd_speed_ms).toFixed(1) + ' m/s';
+}
+
+function updateOutputCards(records, maxRange) {
+  document.getElementById('oc-records').textContent = records.length;
+  document.getElementById('oc-records').className = 'oc-val';
+
+  var tier = records[0] ? parseInt(records[0].tier) : 2;
+  var tierLabels = {1:'Tier 1', 2:'Tier 2', 3:'Tier 3'};
+  var tierCEPs = {1:'≤ 3m CEP', 2:'≤ 30cm CEP', 3:'≤ 5cm CEP'};
+  document.getElementById('oc-tier').textContent = tierLabels[tier] || 'Tier 2';
+  document.getElementById('oc-tier').className = 'oc-val';
+  document.getElementById('oc-tier-cep').textContent = tierCEPs[tier] || '';
+
+  // PoD at max range (last 10% of range records)
+  var farRecords = records.filter(function(r){ return parseFloat(r.range_m) >= maxRange * 0.85; });
+  var pod = farRecords.length > 0
+    ? farRecords.filter(function(r){ return r.detection_flag; }).length / farRecords.length
+    : 0;
+  document.getElementById('oc-pod').textContent = (pod * 100).toFixed(0) + '%';
+  document.getElementById('oc-pod').className = 'oc-val' + (pod >= 0.9 ? '' : pod >= 0.7 ? '' : '');
+
+  var meanErr = records.reduce(function(a,r){ return a + parseFloat(r.pos_error_m); }, 0) / records.length;
+  document.getElementById('oc-err').textContent = meanErr.toFixed(2) + 'm';
+  document.getElementById('oc-err').className = 'oc-val';
+}
+
+// ── CSV DOWNLOAD ──────────────────────────────────────────
+var _csvRecords = [];
+
+function enableDownload(records) {
+  _csvRecords = records;
+  var cfg = getConfig();
+  var fname = 'dcef_sim_' + cfg.sensor.toLowerCase() + '_t' + cfg.tier + '_' + cfg.maxRange + 'm.csv';
+  document.getElementById('dl-filename').textContent = fname;
+  var btn = document.getElementById('dl-btn');
+  btn.classList.remove('disabled');
+  btn.dataset.fname = fname;
+}
+
+function downloadCSV() {
+  if (!_csvRecords.length) return;
+  var cols = ['timestamp_utc','lat_truth','lon_truth','alt_agl_m','hdg_deg','gnd_speed_ms',
+              'sensor_lat','sensor_lon','sensor_type','detection_flag','range_m','pos_error_m',
+              'tier','rf_packet_loss_pct','site_id'];
+  var lines = [cols.join(',')];
+  _csvRecords.forEach(function(r) {
+    lines.push(cols.map(function(c){ return r[c]; }).join(','));
+  });
+  var blob = new Blob([lines.join('\n')], {type:'text/csv'});
+  var url = URL.createObjectURL(blob);
+  var a = document.createElement('a');
+  a.href = url;
+  a.download = document.getElementById('dl-btn').dataset.fname || 'dcef_sim.csv';
+  a.click();
+  URL.revokeObjectURL(url);
+}
+
+// ── MAIN RUN ──────────────────────────────────────────────
+function runSimulation() {
+  if (isRunning) return;
+  var cfg = getConfig();
+  if (!cfg.approach && !cfg.hover && !cfg.orbit) {
+    alert('Select at least one flight profile.');
+    return;
+  }
+
+  // Reset
+  if (animFrame) cancelAnimationFrame(animFrame);
+  animIdx = 0; truthTrail = []; sensorTrail = []; _csvRecords = [];
+  isRunning = true;
+  setGenBtn(true);
+  setStatus('running');
+  document.getElementById('dl-btn').classList.add('disabled');
+  document.getElementById('dl-filename').textContent = 'Generating...';
+  ['oc-records','oc-tier','oc-pod','oc-err'].forEach(function(id){
+    var el = document.getElementById(id);
+    el.textContent = '—'; el.className = 'oc-val dim';
+  });
+  document.getElementById('oc-tier-cep').textContent = '—';
+
+  setupCanvas();
+  setScale(cfg.maxRange);
+  drawBase(cfg.maxRange);
+
+  // Generate
+  var records = generateFlightPath(cfg);
+  simRecords = records;
+
+  // Start animation
+  animateSim(records, cfg.maxRange, Date.now());
+}
+
+function setStatus(s) {
+  var el = document.getElementById('sim-status');
+  el.className = 'canvas-status ' + s;
+  el.textContent = s.toUpperCase();
+}
+
+function setGenBtn(running) {
+  var btn = document.getElementById('gen-btn');
+  if (running) {
+    btn.className = 'gen-btn running';
+    btn.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:16px;height:16px"><rect x="6" y="6" width="12" height="12"/></svg> Running...';
+  } else {
+    btn.className = 'gen-btn';
+    btn.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:16px;height:16px"><polygon points="5 3 19 12 5 21 5 3"/></svg> Generate Scenario';
+  }
+}
+
+// Init
+setupCanvas();
+(function drawIdle() {
+  ctx.clearRect(0,0,W,H);
+  ctx.fillStyle = '#0e0e0e'; ctx.fillRect(0,0,W,H);
+  setScale(500);
+  drawBase(500);
+  ctx.fillStyle = 'rgba(255,255,255,0.12)';
+  ctx.font = '500 13px "Share Tech Mono"';
+  ctx.textAlign = 'center';
+  ctx.fillText('Configure a scenario and click Generate', W/2, H/2 - 10);
+  ctx.fillStyle = 'rgba(242,97,21,0.4)';
+  ctx.font = '11px "Share Tech Mono"';
+  ctx.fillText('← Use the controls panel', W/2, H/2 + 12);
+  ctx.textAlign = 'left';
+})();
+
+window.addEventListener('resize', function() {
+  if (!isRunning) {
+    setupCanvas();
+    setScale(500);
+    drawBase(500);
+  }
+});
+</script>
+</body>
+</html>
