@@ -1,0 +1,402 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Tools — DCEF</title>
+  <meta name="description" content="DCEF open-source Python toolchain — six scripts for parsing, correlating, and visualizing counter-UAS evaluation data.">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@400;600;700;800&family=Barlow:wght@300;400;500;600&family=Share+Tech+Mono&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --orange: #f26115; --orange-dim: rgba(242,97,21,0.12); --orange-mid: rgba(242,97,21,0.4);
+      --black: #060606; --surface: #0e0e0e; --surface-2: #161616; --surface-3: #1c1c1c;
+      --border: rgba(255,255,255,0.07); --border-orange: rgba(242,97,21,0.25);
+      --text: #f0f0f0; --text-dim: #888; --text-dimmer: #444;
+      --blue: #4a9eff; --purple: #a78bfa; --green: #4ade80;
+    }
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    html { scroll-behavior: smooth; }
+    body { background: var(--black); color: var(--text); font-family: "Barlow", sans-serif; font-weight: 400; overflow-x: hidden; }
+
+    /* NAV */
+    nav { position: fixed; top: 0; left: 0; right: 0; z-index: 100; display: flex; align-items: center; justify-content: space-between; padding: 0 2.5rem; height: 64px; background: rgba(6,6,6,0.92); backdrop-filter: blur(12px); border-bottom: 1px solid var(--border); }
+    .nav-icon { height: 104px; width: auto; opacity: 0.95; }
+    .nav-links { display: flex; gap: 2.4rem; list-style: none; }
+    .nav-links a { font-family: "Barlow Condensed", sans-serif; font-weight: 600; font-size: 0.78rem; letter-spacing: 0.12em; text-transform: uppercase; color: var(--text-dim); text-decoration: none; transition: color 0.2s; }
+    .nav-links a:hover, .nav-links a.active { color: var(--orange); }
+
+    /* HERO */
+    .page-hero { padding: 140px 0 80px; background: var(--surface); border-bottom: 1px solid var(--border); position: relative; overflow: hidden; }
+    .page-hero::before { content: "TOOLS"; position: absolute; right: -1rem; top: 50%; transform: translateY(-50%); font-family: "Barlow Condensed", sans-serif; font-weight: 800; font-size: clamp(8rem, 20vw, 18rem); color: rgba(255,255,255,0.025); letter-spacing: 0.05em; white-space: nowrap; pointer-events: none; line-height: 1; }
+    .page-hero .container { position: relative; z-index: 1; }
+    .breadcrumb { font-family: "Share Tech Mono", monospace; font-size: 0.68rem; letter-spacing: 0.2em; color: var(--text-dimmer); text-transform: uppercase; margin-bottom: 1.4rem; }
+    .breadcrumb a { color: var(--orange); text-decoration: none; }
+    .page-hero h1 { font-family: "Barlow Condensed", sans-serif; font-weight: 800; font-size: clamp(3rem,6vw,5.5rem); text-transform: uppercase; letter-spacing: 0.03em; line-height: 0.95; margin-bottom: 1.5rem; }
+    .page-hero h1 span { color: var(--orange); }
+    .page-hero .lead { font-size: 1.1rem; color: var(--text-dim); max-width: 620px; line-height: 1.75; }
+
+    /* SHARED */
+    .container { max-width: 1160px; margin: 0 auto; padding: 0 2.5rem; }
+    section { padding: 6rem 0; }
+    .section-label { font-family: "Share Tech Mono", monospace; font-size: 0.68rem; letter-spacing: 0.25em; color: var(--orange); text-transform: uppercase; margin-bottom: 1rem; display: flex; align-items: center; gap: 0.75rem; }
+    .section-label::before { content: ""; display: block; width: 24px; height: 1px; background: var(--orange); }
+    .section-title { font-family: "Barlow Condensed", sans-serif; font-weight: 800; font-size: clamp(1.8rem,3vw,2.8rem); text-transform: uppercase; letter-spacing: 0.03em; margin-bottom: 2rem; line-height: 1.05; }
+
+    /* OVERVIEW */
+    #overview { background: var(--black); border-bottom: 1px solid var(--border); }
+    .overview-cols { display: grid; grid-template-columns: 1fr 1fr; gap: 5rem; align-items: start; }
+    .overview-text p { font-size: 1.05rem; line-height: 1.85; color: #aaa; margin-bottom: 1.2rem; }
+    .pip-block { background: var(--surface-3); border: 1px solid var(--border); border-left: 3px solid var(--green); padding: 1.2rem 1.4rem; margin-top: 1.5rem; }
+    .pip-label { font-family: "Share Tech Mono", monospace; font-size: 0.6rem; letter-spacing: 0.2em; color: var(--text-dimmer); text-transform: uppercase; margin-bottom: 0.5rem; }
+    .pip-code { font-family: "Share Tech Mono", monospace; font-size: 0.82rem; color: var(--green); line-height: 1.6; }
+    .req-link { display: inline-flex; align-items: center; gap: 0.5rem; margin-top: 0.8rem; font-family: "Barlow Condensed", sans-serif; font-weight: 700; font-size: 0.78rem; letter-spacing: 0.12em; text-transform: uppercase; color: var(--orange); text-decoration: none; }
+    .req-link svg { width: 14px; height: 14px; fill: none; stroke: var(--orange); stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
+    .spec-list { display: flex; flex-direction: column; gap: 1px; background: var(--border); border: 1px solid var(--border); }
+    .spec-row { background: var(--surface); padding: 1rem 1.4rem; display: flex; justify-content: space-between; align-items: center; transition: background 0.2s; }
+    .spec-row:hover { background: var(--surface-2); }
+    .spec-key { font-family: "Share Tech Mono", monospace; font-size: 0.68rem; letter-spacing: 0.12em; color: var(--text-dim); text-transform: uppercase; }
+    .spec-val { font-family: "Barlow Condensed", sans-serif; font-weight: 700; font-size: 0.95rem; text-transform: uppercase; }
+    .spec-val.orange { color: var(--orange); }
+
+    /* PIPELINE FLOW */
+    #pipeline { background: var(--surface); border-bottom: 1px solid var(--border); }
+    .flow-steps { display: flex; align-items: center; gap: 0; overflow-x: auto; padding-bottom: 0.5rem; }
+    .flow-step { background: var(--surface-2); border: 1px solid var(--border); padding: 1.4rem 1.2rem; flex-shrink: 0; min-width: 150px; position: relative; transition: background 0.2s, border-color 0.2s; }
+    .flow-step:hover { background: var(--surface-3); border-color: var(--border-orange); }
+    .flow-step-num { font-family: "Share Tech Mono", monospace; font-size: 0.58rem; letter-spacing: 0.2em; color: var(--orange); margin-bottom: 0.5rem; }
+    .flow-step-title { font-family: "Barlow Condensed", sans-serif; font-weight: 700; font-size: 1rem; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 0.4rem; }
+    .flow-step-sub { font-family: "Share Tech Mono", monospace; font-size: 0.62rem; color: var(--text-dimmer); line-height: 1.5; }
+    .flow-arrow { font-family: "Share Tech Mono", monospace; color: var(--orange); font-size: 1.2rem; padding: 0 0.6rem; flex-shrink: 0; align-self: center; }
+
+    /* TOOL VIEWER */
+    #tools { background: var(--black); border-bottom: 1px solid var(--border); }
+    .tool-layout { display: grid; grid-template-columns: 340px 1fr; gap: 1.5rem; align-items: start; }
+    .tool-cards { display: flex; flex-direction: column; gap: 1px; background: var(--border); border: 1px solid var(--border); }
+    .tool-card { background: var(--surface); padding: 1.4rem 1.6rem; cursor: pointer; transition: background 0.2s; border-left: 3px solid transparent; position: relative; }
+    .tool-card:hover { background: var(--surface-2); }
+    .tool-card.active { background: var(--surface-2); border-left-color: var(--orange); }
+    .tc-num { font-family: "Share Tech Mono", monospace; font-size: 0.58rem; letter-spacing: 0.2em; color: var(--orange); margin-bottom: 0.35rem; }
+    .tc-title { font-family: "Barlow Condensed", sans-serif; font-weight: 700; font-size: 1.05rem; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 0.35rem; }
+    .tc-desc { font-size: 0.82rem; color: var(--text-dim); line-height: 1.55; margin-bottom: 0.75rem; }
+    .tc-io { display: flex; flex-direction: column; gap: 0.25rem; }
+    .tc-io-row { font-family: "Share Tech Mono", monospace; font-size: 0.62rem; color: var(--text-dimmer); display: flex; gap: 0.5rem; }
+    .tc-io-row .arrow { color: var(--orange); }
+    .tc-io-row .val { color: var(--text-dim); }
+    .tc-deps { display: flex; flex-wrap: wrap; gap: 0.3rem; margin-top: 0.6rem; }
+    .dep-tag { font-family: "Share Tech Mono", monospace; font-size: 0.58rem; color: var(--text-dimmer); border: 1px solid var(--text-dimmer); padding: 0.1rem 0.4rem; }
+
+    /* Code viewer */
+    .code-viewer { background: var(--surface-3); border: 1px solid var(--border); position: sticky; top: 80px; }
+    .code-viewer-header { display: flex; justify-content: space-between; align-items: center; padding: 0.8rem 1.2rem; background: var(--surface-2); border-bottom: 1px solid var(--border); }
+    .cv-filename { font-family: "Share Tech Mono", monospace; font-size: 0.72rem; letter-spacing: 0.1em; color: var(--orange); }
+    .cv-actions { display: flex; gap: 0.75rem; align-items: center; }
+    .cv-btn { font-family: "Barlow Condensed", sans-serif; font-weight: 700; font-size: 0.72rem; letter-spacing: 0.12em; text-transform: uppercase; color: var(--text-dim); background: transparent; border: 1px solid var(--border); padding: 0.3rem 0.8rem; cursor: pointer; transition: all 0.2s; text-decoration: none; display: inline-flex; align-items: center; gap: 0.4rem; }
+    .cv-btn:hover { color: var(--orange); border-color: var(--border-orange); }
+    .cv-btn svg { width: 12px; height: 12px; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
+    .code-scroll { overflow: auto; max-height: 620px; }
+    pre.code-display { padding: 1.4rem; font-family: "Share Tech Mono", monospace; font-size: 0.74rem; line-height: 1.65; color: #ccc; white-space: pre; tab-size: 4; margin: 0; }
+
+    /* Syntax highlight colors */
+    .kw  { color: #a78bfa; }
+    .fn  { color: #f26115; }
+    .st  { color: #4ade80; }
+    .cm  { color: #444; }
+    .nm  { color: #4a9eff; }
+    .dc  { color: #888; font-style: italic; }
+
+    /* FOOTER */
+    footer { background: var(--surface); border-top: 1px solid var(--border); padding: 2.8rem 0; }
+    .footer-inner { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 1.5rem; }
+    .footer-left { display: flex; align-items: center; gap: 1.2rem; }
+    .footer-icon { height: 28px; width: auto; opacity: 0.6; }
+    .footer-text { font-family: "Share Tech Mono", monospace; font-size: 0.7rem; letter-spacing: 0.12em; color: var(--text-dimmer); line-height: 1.7; }
+    .footer-text strong { color: var(--text-dim); font-weight: 400; }
+    .footer-right { display: flex; align-items: center; gap: 2rem; }
+    .footer-link { display: flex; align-items: center; gap: 0.5rem; font-family: "Barlow Condensed", sans-serif; font-weight: 600; font-size: 0.78rem; letter-spacing: 0.14em; text-transform: uppercase; color: var(--text-dim); text-decoration: none; transition: color 0.2s; }
+    .footer-link:hover { color: var(--orange); }
+    .footer-link svg { width: 16px; height: 16px; fill: currentColor; }
+
+    .fade-in { opacity: 0; transform: translateY(20px); transition: opacity 0.6s ease, transform 0.6s ease; }
+    .fade-in.visible { opacity: 1; transform: translateY(0); }
+  </style>
+</head>
+<body>
+<nav>
+  <a href="index.html"><img src="icon.svg" alt="DCEF" class="nav-icon"></a>
+  <ul class="nav-links">
+    <li><a href="framework.html">Framework</a></li>
+    <li><a href="research.html">Research</a></li>
+    <li><a href="data.html">Data</a></li>
+    <li><a href="tools.html" class="active">Tools</a></li>
+    <li><a href="references.html">References</a></li>
+  </ul>
+</nav>
+
+<div class="page-hero">
+  <div class="container">
+    <div class="breadcrumb"><a href="index.html">DCEF</a> / Tools</div>
+    <h1>Open-Source<br><span>Toolchain</span></h1>
+    <p class="lead">Six Python scripts implementing the full DCEF pipeline — from raw ULog binary to standardized evaluation outputs. Real code, real outputs, built to run on your data.</p>
+  </div>
+</div>
+
+<section id="overview">
+  <div class="container">
+    <div class="overview-cols">
+      <div class="fade-in">
+        <p class="section-label">Overview</p>
+        <div class="section-title">Built to Run on Real Data</div>
+        <p class="overview-text" style="color:#aaa;font-size:1.05rem;line-height:1.85;margin-bottom:1.2rem;">Each script is standalone, reads and writes standard DCEF-schema CSV files, and produces outputs that are directly comparable across sites. Install the dependencies once and run the pipeline end-to-end in under five minutes.</p>
+        <p style="color:#aaa;font-size:1.05rem;line-height:1.85;margin-bottom:1.2rem;">The synthetic Scenario Alpha dataset on the Data page was generated to match exactly what real pipeline outputs look like — so you can run every script against those CSVs right now to verify the pipeline before using real flight data.</p>
+        <div class="pip-block">
+          <div class="pip-label">Install all dependencies</div>
+          <div class="pip-code">pip install pyulog pandas numpy matplotlib simplekml scipy</div>
+        </div>
+        <a href="requirements.txt" download class="req-link">
+          <svg viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+          Download requirements.txt
+        </a>
+      </div>
+      <div class="fade-in">
+        <div class="spec-list">
+          <div class="spec-row"><span class="spec-key">Language</span><span class="spec-val">Python 3.9+</span></div>
+          <div class="spec-row"><span class="spec-key">Scripts</span><span class="spec-val orange">6</span></div>
+          <div class="spec-row"><span class="spec-key">Input Formats</span><span class="spec-val">ULog · CSV</span></div>
+          <div class="spec-row"><span class="spec-key">Output Formats</span><span class="spec-val">CSV · PNG · KML</span></div>
+          <div class="spec-row"><span class="spec-key">License</span><span class="spec-val">MIT (Open Source)</span></div>
+          <div class="spec-row"><span class="spec-key">Tested Against</span><span class="spec-val orange">Scenario Alpha CSV</span></div>
+          <div class="spec-row"><span class="spec-key">Schema Version</span><span class="spec-val orange">DCEF v1.0 · 15 fields</span></div>
+          <div class="spec-row"><span class="spec-key">Repo</span><span class="spec-val"><a href="https://github.com/nick-smock/dcef" style="color:var(--orange);text-decoration:none;">github.com/nick-smock/dcef</a></span></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section id="pipeline">
+  <div class="container">
+    <p class="section-label">Data Flow</p>
+    <div class="section-title">How the Scripts Connect</div>
+    <div class="flow-steps fade-in">
+      <div class="flow-step">
+        <div class="flow-step-num">TOOL 01</div>
+        <div class="flow-step-title">Parse Telemetry</div>
+        <div class="flow-step-sub">ULog binary<br>→ telemetry.csv</div>
+      </div>
+      <div class="flow-arrow">→</div>
+      <div class="flow-step">
+        <div class="flow-step-num">TOOL 02</div>
+        <div class="flow-step-title">Correlate</div>
+        <div class="flow-step-sub">telem.csv + sensor.csv<br>→ correlated.csv</div>
+      </div>
+      <div class="flow-arrow">→</div>
+      <div class="flow-step">
+        <div class="flow-step-num">TOOL 03</div>
+        <div class="flow-step-title">Scatter Plot</div>
+        <div class="flow-step-sub">correlated.csv<br>→ scatter.png</div>
+      </div>
+      <div class="flow-arrow">+</div>
+      <div class="flow-step">
+        <div class="flow-step-num">TOOL 04</div>
+        <div class="flow-step-title">Polar Plot</div>
+        <div class="flow-step-sub">correlated.csv<br>→ polar.png</div>
+      </div>
+      <div class="flow-arrow">+</div>
+      <div class="flow-step">
+        <div class="flow-step-num">TOOL 05</div>
+        <div class="flow-step-title">PoD Curve</div>
+        <div class="flow-step-sub">correlated.csv<br>→ pod_curve.png</div>
+      </div>
+      <div class="flow-arrow">+</div>
+      <div class="flow-step">
+        <div class="flow-step-num">TOOL 06</div>
+        <div class="flow-step-title">Export KML</div>
+        <div class="flow-step-sub">correlated.csv<br>→ output.kml</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section id="tools">
+  <div class="container">
+    <p class="section-label">Source Code</p>
+    <div class="section-title">Click Any Tool to View Code</div>
+    <div class="tool-layout fade-in">
+      <div class="tool-cards" id="tool-cards">
+        <div class="tool-card" data-slug="parse_telemetry.py" onclick="selectTool('parse_telemetry.py')">
+          <div class="tc-num">TOOL 01</div>
+          <div class="tc-title">Parse ULog Telemetry</div>
+          <div class="tc-desc">Reads a PX4 ULog binary and extracts position, heading, ground speed, and RF link quality. Resamples to 1 Hz and writes a DCEF telemetry CSV.</div>
+          <div class="tc-io">
+            <div class="tc-io-row"><span class="arrow">IN</span><span class="val">.ulg (PX4 binary)</span></div>
+            <div class="tc-io-row"><span class="arrow">OUT</span><span class="val">telemetry.csv</span></div>
+          </div>
+          <div class="tc-deps"><span class="dep-tag">pyulog</span><span class="dep-tag">pandas</span><span class="dep-tag">numpy</span></div>
+        </div>
+        <div class="tool-card" data-slug="correlate.py" onclick="selectTool('correlate.py')">
+          <div class="tc-num">TOOL 02</div>
+          <div class="tc-title">Correlate Telemetry + Sensor</div>
+          <div class="tc-desc">Merges telemetry and sensor CSVs on timestamp_utc using pandas merge_asof. Computes range, position error, and all derived fields.</div>
+          <div class="tc-io">
+            <div class="tc-io-row"><span class="arrow">IN</span><span class="val">telemetry.csv + sensor.csv</span></div>
+            <div class="tc-io-row"><span class="arrow">OUT</span><span class="val">correlated.csv</span></div>
+          </div>
+          <div class="tc-deps"><span class="dep-tag">pandas</span><span class="dep-tag">numpy</span></div>
+        </div>
+        <div class="tool-card" data-slug="plot_scatter.py" onclick="selectTool('plot_scatter.py')">
+          <div class="tc-num">TOOL 03</div>
+          <div class="tc-title">Plot Position Error Scatter</div>
+          <div class="tc-desc">Generates a 2D horizontal position error scatter plot. Points are colour-coded by range band with concentric CEP rings and a crosshair at truth origin.</div>
+          <div class="tc-io">
+            <div class="tc-io-row"><span class="arrow">IN</span><span class="val">correlated.csv</span></div>
+            <div class="tc-io-row"><span class="arrow">OUT</span><span class="val">scatter.png</span></div>
+          </div>
+          <div class="tc-deps"><span class="dep-tag">matplotlib</span><span class="dep-tag">numpy</span></div>
+        </div>
+        <div class="tool-card" data-slug="plot_polar.py" onclick="selectTool('plot_polar.py')">
+          <div class="tc-num">TOOL 04</div>
+          <div class="tc-title">Plot Polar Directional Bias</div>
+          <div class="tc-desc">Generates a polar rose plot showing mean position error binned by vehicle heading. Elongation along any axis indicates systematic sensor pointing bias.</div>
+          <div class="tc-io">
+            <div class="tc-io-row"><span class="arrow">IN</span><span class="val">correlated.csv</span></div>
+            <div class="tc-io-row"><span class="arrow">OUT</span><span class="val">polar.png</span></div>
+          </div>
+          <div class="tc-deps"><span class="dep-tag">matplotlib</span><span class="dep-tag">numpy</span></div>
+        </div>
+        <div class="tool-card" data-slug="plot_pod.py" onclick="selectTool('plot_pod.py')">
+          <div class="tc-num">TOOL 05</div>
+          <div class="tc-title">Plot PoD Curve</div>
+          <div class="tc-desc">Generates a range-binned probability of detection curve with 90% Wilson score confidence intervals. The primary procurement-relevant output.</div>
+          <div class="tc-io">
+            <div class="tc-io-row"><span class="arrow">IN</span><span class="val">correlated.csv</span></div>
+            <div class="tc-io-row"><span class="arrow">OUT</span><span class="val">pod_curve.png</span></div>
+          </div>
+          <div class="tc-deps"><span class="dep-tag">matplotlib</span><span class="dep-tag">scipy</span></div>
+        </div>
+        <div class="tool-card" data-slug="export_kml.py" onclick="selectTool('export_kml.py')">
+          <div class="tc-num">TOOL 06</div>
+          <div class="tc-title">Export KML for Google Earth</div>
+          <div class="tc-desc">Exports truth track, sensor track, and detection placemarks as a KML file. Loads directly into Google Earth for site-specific spatial overlay.</div>
+          <div class="tc-io">
+            <div class="tc-io-row"><span class="arrow">IN</span><span class="val">correlated.csv</span></div>
+            <div class="tc-io-row"><span class="arrow">OUT</span><span class="val">output.kml</span></div>
+          </div>
+          <div class="tc-deps"><span class="dep-tag">simplekml</span><span class="dep-tag">pandas</span></div>
+        </div>
+      </div>
+
+      <div class="code-viewer">
+        <div class="code-viewer-header">
+          <span class="cv-filename" id="cv-filename">parse_telemetry.py</span>
+          <div class="cv-actions">
+            <a class="cv-btn" id="cv-dl" href="parse_telemetry.py" download>
+              <svg viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+              Download
+            </a>
+            <button class="cv-btn" onclick="copyCode()">
+              <svg viewBox="0 0 24 24"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+              Copy
+            </button>
+          </div>
+        </div>
+        <div class="code-scroll">
+          <pre class="code-display" id="code-display"></pre>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<footer>
+  <div class="container">
+    <div class="footer-inner">
+      <div class="footer-left">
+        <img src="icon.svg" alt="DCEF" class="footer-icon">
+        <div class="footer-text">
+          <strong>DCEF — Distributed C-UAS Evaluation Framework</strong><br>
+          Wayne State University · Master of Science in Systems Engineering<br>
+          SYE 6942 Capstone Research Project
+        </div>
+      </div>
+      <div class="footer-right">
+        <a href="https://github.com/nick-smock/dcef" class="footer-link" target="_blank" rel="noopener">
+          <svg viewBox="0 0 24 24"><path d="M9 19c-5 1.5-5-2.5-7-3m14 6v-3.87a3.37 3.37 0 0 0-.94-2.61c3.14-.35 6.44-1.54 6.44-7A5.44 5.44 0 0 0 20 4.77 5.07 5.07 0 0 0 19.91 1S18.73.65 16 2.48a13.38 13.38 0 0 0-7 0C6.27.65 5.09 1 5.09 1A5.07 5.07 0 0 0 5 4.77a5.44 5.44 0 0 0-1.5 3.78c0 5.42 3.3 6.61 6.44 7A3.37 3.37 0 0 0 9 18.13V22"/></svg>
+          GitHub
+        </a>
+      </div>
+    </div>
+  </div>
+</footer>
+<script>
+const TOOLS = {
+  "parse_telemetry.py": {"filename": "parse_telemetry.py", "code": "\"\"\"\nparse_telemetry.py \u2014 DCEF Tool 01\nReads a PX4 ULog binary file and extracts position, heading,\nground speed, and RF link quality fields. Resamples to 1 Hz\nand writes a DCEF-schema-compliant telemetry CSV.\n\nRequirements: pyulog, pandas, numpy\nUsage: python parse_telemetry.py <flight.ulg> [output.csv]\n\"\"\"\n\nimport sys\nimport numpy as np\nimport pandas as pd\nfrom pyulog import ULog\nfrom pyulog.px4 import PX4ULog\n\ndef parse_ulog(ulg_path: str, output_path: str = None) -> pd.DataFrame:\n    if output_path is None:\n        output_path = ulg_path.replace('.ulg', '_telemetry.csv')\n\n    print(f'[DCEF] Parsing: {ulg_path}')\n    log = ULog(ulg_path)\n    px4 = PX4ULog(log)\n\n    # \u2500\u2500 Extract vehicle_global_position \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\n    gps = log.get_dataset('vehicle_global_position')\n    gps_df = pd.DataFrame({\n        'timestamp_us': gps.data['timestamp'],\n        'lat_truth':    gps.data['lat'],\n        'lon_truth':    gps.data['lon'],\n        'alt_agl_m':    gps.data['alt'] - gps.data.get('terrain_alt',\n                        np.zeros(len(gps.data['alt']))),\n    })\n\n    # \u2500\u2500 Extract vehicle_attitude for heading \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\n    att = log.get_dataset('vehicle_attitude')\n    q = np.column_stack([\n        att.data['q[0]'], att.data['q[1]'],\n        att.data['q[2]'], att.data['q[3]'],\n    ])\n    # Yaw from quaternion\n    yaw = np.degrees(np.arctan2(\n        2*(q[:,0]*q[:,3] + q[:,1]*q[:,2]),\n        1 - 2*(q[:,2]**2 + q[:,3]**2)\n    )) % 360\n    att_df = pd.DataFrame({\n        'timestamp_us': att.data['timestamp'],\n        'hdg_deg':      yaw,\n    })\n\n    # \u2500\u2500 Extract vehicle_local_position for ground speed \u2500\u2500\u2500\u2500\u2500\u2500\u2500\n    vel = log.get_dataset('vehicle_local_position')\n    spd = np.sqrt(vel.data['vx']**2 + vel.data['vy']**2)\n    vel_df = pd.DataFrame({\n        'timestamp_us': vel.data['timestamp'],\n        'gnd_speed_ms': spd,\n    })\n\n    # \u2500\u2500 Extract telemetry_status for RF link quality \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\n    try:\n        link = log.get_dataset('telemetry_status')\n        rf_df = pd.DataFrame({\n            'timestamp_us':      link.data['timestamp'],\n            'rf_packet_loss_pct': link.data['rxerrors'] /\n                                  np.maximum(link.data['rxerrors'] +\n                                             link.data['fixed'], 1) * 100,\n        })\n    except Exception:\n        # Telemetry status not always present\n        rf_df = pd.DataFrame({\n            'timestamp_us':      gps_df['timestamp_us'],\n            'rf_packet_loss_pct': 0.0,\n        })\n\n    # \u2500\u2500 Merge all streams on microsecond timestamp \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\n    base = gps_df.set_index('timestamp_us')\n    for df, col in [(att_df, 'hdg_deg'),\n                    (vel_df, 'gnd_speed_ms'),\n                    (rf_df,  'rf_packet_loss_pct')]:\n        base = base.join(\n            df.set_index('timestamp_us')[col],\n            how='outer'\n        )\n\n    base = base.sort_index().interpolate(method='index').dropna()\n\n    # \u2500\u2500 Convert timestamp, resample to 1 Hz \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\n    # ULog timestamps are microseconds from boot; GPS gives UTC offset\n    try:\n        utc_offset_us = log.start_timestamp\n    except Exception:\n        utc_offset_us = 0\n\n    base.index = pd.to_datetime(base.index + utc_offset_us, unit='us', utc=True)\n    df_1hz = base.resample('1S').mean().dropna()\n    df_1hz.index.name = 'timestamp_utc'\n    df_1hz = df_1hz.reset_index()\n\n    # \u2500\u2500 Add schema fields \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\n    df_1hz['site_id'] = 'SITE-UNKNOWN'\n\n    # Round to schema precision\n    df_1hz['lat_truth']          = df_1hz['lat_truth'].round(8)\n    df_1hz['lon_truth']          = df_1hz['lon_truth'].round(8)\n    df_1hz['alt_agl_m']          = df_1hz['alt_agl_m'].round(2)\n    df_1hz['hdg_deg']            = df_1hz['hdg_deg'].round(1)\n    df_1hz['gnd_speed_ms']       = df_1hz['gnd_speed_ms'].round(2)\n    df_1hz['rf_packet_loss_pct'] = df_1hz['rf_packet_loss_pct'].round(2)\n\n    cols = ['timestamp_utc', 'lat_truth', 'lon_truth', 'alt_agl_m',\n            'hdg_deg', 'gnd_speed_ms', 'rf_packet_loss_pct', 'site_id']\n    out = df_1hz[cols]\n    out.to_csv(output_path, index=False)\n    print(f'[DCEF] Written {len(out)} records \u2192 {output_path}')\n    return out\n\n\nif __name__ == '__main__':\n    if len(sys.argv) < 2:\n        print('Usage: python parse_telemetry.py <flight.ulg> [output.csv]')\n        sys.exit(1)\n    ulg   = sys.argv[1]\n    out   = sys.argv[2] if len(sys.argv) > 2 else None\n    parse_ulog(ulg, out)\n"},
+  "correlate.py": {"filename": "correlate.py", "code": "\"\"\"\ncorrelate.py \u2014 DCEF Tool 02\nMerges a DCEF telemetry CSV and a sensor output CSV on\ntimestamp_utc. Computes all derived fields (range_m,\npos_error_m, tier) and writes the full correlated dataset.\n\nRequirements: pandas, numpy\nUsage: python correlate.py <telemetry.csv> <sensor.csv> [output.csv] [--tier 1|2|3]\n\"\"\"\n\nimport sys\nimport argparse\nimport numpy as np\nimport pandas as pd\n\n# \u2500\u2500 Maximum time skew allowed for a valid correlation match \u2500\u2500\nMAX_SKEW_S = 0.05   # 50ms per DCEF time-sync protocol\n\n# \u2500\u2500 CEP thresholds per tier \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\nTIER_CEP = {1: 3.0, 2: 0.30, 3: 0.05}\n\n\ndef haversine(lat1, lon1, lat2, lon2) -> np.ndarray:\n    \"\"\"Vectorised haversine distance in metres.\"\"\"\n    R = 6_371_000.0\n    phi1, phi2 = np.radians(lat1), np.radians(lat2)\n    dphi = np.radians(lat2 - lat1)\n    dlam = np.radians(lon2 - lon1)\n    a = np.sin(dphi/2)**2 + np.cos(phi1)*np.cos(phi2)*np.sin(dlam/2)**2\n    return R * 2 * np.arctan2(np.sqrt(a), np.sqrt(1 - a))\n\n\ndef correlate(telem_path: str,\n              sensor_path: str,\n              output_path: str = None,\n              tier: int = 2,\n              site_id: str = None) -> pd.DataFrame:\n\n    if output_path is None:\n        output_path = telem_path.replace('_telemetry.csv', '_correlated.csv')\n        if output_path == telem_path:\n            output_path = 'correlated.csv'\n\n    print(f'[DCEF] Loading telemetry: {telem_path}')\n    telem = pd.read_csv(telem_path, parse_dates=['timestamp_utc'])\n    telem['timestamp_utc'] = pd.to_datetime(\n        telem['timestamp_utc'], utc=True, errors='coerce'\n    )\n    telem = telem.dropna(subset=['timestamp_utc']).sort_values('timestamp_utc')\n\n    print(f'[DCEF] Loading sensor:    {sensor_path}')\n    sensor = pd.read_csv(sensor_path, parse_dates=['timestamp_utc'])\n    sensor['timestamp_utc'] = pd.to_datetime(\n        sensor['timestamp_utc'], utc=True, errors='coerce'\n    )\n    sensor = sensor.dropna(subset=['timestamp_utc']).sort_values('timestamp_utc')\n\n    # \u2500\u2500 Merge-asof: nearest sensor record within MAX_SKEW_S \u2500\u2500\n    merged = pd.merge_asof(\n        telem,\n        sensor[['timestamp_utc', 'sensor_lat', 'sensor_lon',\n                'sensor_type', 'detection_flag']],\n        on='timestamp_utc',\n        tolerance=pd.Timedelta(seconds=MAX_SKEW_S),\n        direction='nearest',\n    )\n\n    n_matched = merged['sensor_lat'].notna().sum()\n    n_total   = len(merged)\n    print(f'[DCEF] Matched {n_matched}/{n_total} records '\n          f'(tolerance \u00b1{MAX_SKEW_S*1000:.0f}ms)')\n\n    # Drop records with no sensor match\n    merged = merged.dropna(subset=['sensor_lat', 'sensor_lon'])\n\n    # \u2500\u2500 Derived fields \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\n    # Sensor origin is defined as the mean sensor position at\n    # near-zero range; for simplicity, use the first telem point\n    # as origin reference for range computation.\n    # In production: pass --sensor-origin lat,lon\n    sensor_origin_lat = telem['lat_truth'].iloc[0]\n    sensor_origin_lon = telem['lon_truth'].iloc[0]\n\n    merged['range_m'] = haversine(\n        sensor_origin_lat, sensor_origin_lon,\n        merged['lat_truth'].values,\n        merged['lon_truth'].values,\n    ).round(1)\n\n    merged['pos_error_m'] = haversine(\n        merged['lat_truth'].values,\n        merged['lon_truth'].values,\n        merged['sensor_lat'].values,\n        merged['sensor_lon'].values,\n    ).round(2)\n\n    merged['tier']    = tier\n    merged['site_id'] = site_id or merged.get('site_id', 'SITE-UNKNOWN')\n\n    # \u2500\u2500 Validate against tier CEP \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\n    cep = TIER_CEP[tier]\n    p95 = merged['pos_error_m'].quantile(0.95)\n    status = 'PASS' if p95 <= cep * 20 else 'REVIEW'  # 20\u00d7 CEP = detection-class tolerance\n    print(f'[DCEF] Tier {tier} (CEP \u2264{cep}m) | '\n          f'Mean error: {merged[\"pos_error_m\"].mean():.2f}m | '\n          f'95th pct: {p95:.2f}m | {status}')\n\n    # \u2500\u2500 Output column order (DCEF schema) \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\n    cols = [\n        'timestamp_utc', 'lat_truth', 'lon_truth', 'alt_agl_m',\n        'hdg_deg', 'gnd_speed_ms', 'sensor_lat', 'sensor_lon',\n        'sensor_type', 'detection_flag', 'range_m', 'pos_error_m',\n        'tier', 'rf_packet_loss_pct', 'site_id',\n    ]\n    out = merged[[c for c in cols if c in merged.columns]]\n    out.to_csv(output_path, index=False)\n    print(f'[DCEF] Written {len(out)} records \u2192 {output_path}')\n    return out\n\n\nif __name__ == '__main__':\n    parser = argparse.ArgumentParser(description='DCEF Correlator')\n    parser.add_argument('telemetry', help='Telemetry CSV path')\n    parser.add_argument('sensor',    help='Sensor CSV path')\n    parser.add_argument('output',    nargs='?', help='Output CSV path')\n    parser.add_argument('--tier',    type=int, default=2, choices=[1,2,3])\n    parser.add_argument('--site-id', default=None)\n    args = parser.parse_args()\n    correlate(args.telemetry, args.sensor, args.output, args.tier, args.site_id)\n"},
+  "plot_scatter.py": {"filename": "plot_scatter.py", "code": "\"\"\"\nplot_scatter.py \u2014 DCEF Tool 03\nGenerates a 2D horizontal position error scatter plot from a\nDCEF correlated CSV. Points are colour-coded by range band.\nConcentric CEP rings and a crosshair mark the truth origin.\n\nRequirements: pandas, matplotlib, numpy\nUsage: python plot_scatter.py <correlated.csv> [output.png]\n\"\"\"\n\nimport sys\nimport numpy as np\nimport pandas as pd\nimport matplotlib.pyplot as plt\nimport matplotlib.patches as mpatches\nfrom matplotlib.ticker import MultipleLocator\n\n# \u2500\u2500 DCEF brand palette \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\nORANGE  = '#f26115'\nBLUE    = '#4a9eff'\nPURPLE  = '#a78bfa'\nGREEN   = '#4ade80'\nBG      = '#060606'\nSURFACE = '#0e0e0e'\nDIM     = '#888888'\nBORDER  = '#1a1a1a'\n\nRANGE_BINS  = [(300, 400), (400, 500), (500, 600)]\nBIN_COLORS  = [BLUE, ORANGE, PURPLE]\nBIN_LABELS  = ['300\u2013400 m', '400\u2013500 m', '500\u2013600 m']\n\n\ndef plot_scatter(csv_path: str, output_path: str = None):\n    if output_path is None:\n        output_path = csv_path.replace('.csv', '_scatter.png')\n\n    df = pd.read_csv(csv_path)\n    print(f'[DCEF] Loaded {len(df)} records from {csv_path}')\n\n    # \u2500\u2500 Compute relative offsets in metres from truth \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\n    R_LAT  = 111_320.0\n    R_LON  = 111_320.0 * np.cos(np.radians(df['lat_truth'].mean()))\n\n    df['dx'] = (df['sensor_lon'] - df['lon_truth']) * R_LON\n    df['dy'] = (df['sensor_lat'] - df['lat_truth']) * R_LAT\n\n    # \u2500\u2500 Figure \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\n    fig, ax = plt.subplots(figsize=(7, 7), facecolor=BG)\n    ax.set_facecolor(SURFACE)\n\n    # Grid\n    ax.grid(color=BORDER, linewidth=0.4, zorder=0)\n    ax.set_axisbelow(True)\n\n    # CEP rings\n    max_err = df['pos_error_m'].max()\n    ring_steps = np.arange(5, max_err + 5, 5)\n    for r in ring_steps:\n        circle = plt.Circle((0, 0), r, color=ORANGE,\n                             fill=False, linewidth=0.6,\n                             linestyle='--', alpha=0.18, zorder=1)\n        ax.add_patch(circle)\n        ax.text(r * 0.71, r * 0.71, f'{r:.0f}m',\n                color=ORANGE, fontsize=6, alpha=0.4,\n                ha='center', va='center')\n\n    # Points by range bin\n    for (lo, hi), colour, label in zip(RANGE_BINS, BIN_COLORS, BIN_LABELS):\n        mask = (df['range_m'] >= lo) & (df['range_m'] < hi)\n        sub  = df[mask]\n        ax.scatter(sub['dx'], sub['dy'],\n                   c=colour, s=20, alpha=0.7,\n                   label=label, linewidths=0, zorder=3)\n\n    # Truth origin crosshair\n    ax.axhline(0, color='white', linewidth=0.8, alpha=0.4, linestyle='--', zorder=2)\n    ax.axvline(0, color='white', linewidth=0.8, alpha=0.4, linestyle='--', zorder=2)\n    ax.scatter([0], [0], c='white', s=40, zorder=5, marker='+', linewidths=1.5)\n\n    # Mean error marker\n    mx, my = df['dx'].mean(), df['dy'].mean()\n    ax.scatter([mx], [my], c=ORANGE, s=60, zorder=6,\n               marker='x', linewidths=2, label=f'Mean offset ({mx:.1f}, {my:.1f})m')\n\n    # Stats annotation\n    stats = (f\"n = {len(df)}\\n\"\n             f\"Mean error: {df['pos_error_m'].mean():.2f} m\\n\"\n             f\"95th pct:   {df['pos_error_m'].quantile(0.95):.2f} m\\n\"\n             f\"Max error:  {df['pos_error_m'].max():.2f} m\")\n    ax.text(0.02, 0.98, stats, transform=ax.transAxes,\n            fontsize=7.5, color=DIM, va='top', ha='left',\n            fontfamily='monospace',\n            bbox=dict(boxstyle='round,pad=0.4', facecolor='#161616',\n                      edgecolor=BORDER, alpha=0.9))\n\n    # Tier badge\n    tier = int(df['tier'].iloc[0])\n    ax.text(0.98, 0.98, f'TIER {tier}', transform=ax.transAxes,\n            fontsize=8, color=ORANGE, va='top', ha='right',\n            fontfamily='monospace', weight='bold')\n\n    # Labels & formatting\n    ax.set_xlabel('East / West offset  (m)', color=DIM, fontsize=9)\n    ax.set_ylabel('North / South offset  (m)', color=DIM, fontsize=9)\n    ax.set_title('DCEF \u2014 2D Position Error Scatter\\nSensor-reported vs. Telemetry Ground Truth',\n                 color='white', fontsize=11, pad=14, weight='bold')\n    ax.tick_params(colors=DIM, labelsize=8)\n    for spine in ax.spines.values():\n        spine.set_edgecolor(BORDER)\n\n    ax.legend(facecolor='#161616', edgecolor=BORDER,\n              labelcolor='white', fontsize=7.5, loc='lower right')\n    ax.set_aspect('equal')\n\n    plt.tight_layout()\n    plt.savefig(output_path, dpi=150, facecolor=BG, bbox_inches='tight')\n    print(f'[DCEF] Saved \u2192 {output_path}')\n    plt.close()\n\n\nif __name__ == '__main__':\n    if len(sys.argv) < 2:\n        print('Usage: python plot_scatter.py <correlated.csv> [output.png]')\n        sys.exit(1)\n    plot_scatter(sys.argv[1], sys.argv[2] if len(sys.argv) > 2 else None)\n"},
+  "plot_polar.py": {"filename": "plot_polar.py", "code": "\"\"\"\nplot_polar.py \u2014 DCEF Tool 04\nGenerates a polar error plot showing directional sensor bias\nfrom a DCEF correlated CSV. Each spoke = mean position error\nfor tracks where the drone was flying in that heading.\n\nRequirements: pandas, matplotlib, numpy\nUsage: python plot_polar.py <correlated.csv> [output.png]\n\"\"\"\n\nimport sys\nimport numpy as np\nimport pandas as pd\nimport matplotlib.pyplot as plt\n\nORANGE  = '#f26115'\nBG      = '#060606'\nSURFACE = '#0e0e0e'\nDIM     = '#888888'\nBORDER  = '#1a1a1a'\n\nN_BINS  = 16   # 22.5\u00b0 steps\n\n\ndef plot_polar(csv_path: str, output_path: str = None):\n    if output_path is None:\n        output_path = csv_path.replace('.csv', '_polar.png')\n\n    df = pd.read_csv(csv_path)\n    print(f'[DCEF] Loaded {len(df)} records')\n\n    # Bin headings\n    edges  = np.linspace(0, 360, N_BINS + 1)\n    labels = (edges[:-1] + edges[1:]) / 2\n    df['hdg_bin'] = pd.cut(df['hdg_deg'], bins=edges,\n                           labels=labels, include_lowest=True)\n    binned = df.groupby('hdg_bin', observed=True)['pos_error_m'].mean()\n\n    # Align to N_BINS; fill missing bins with 0\n    angles  = np.radians(labels)\n    values  = np.array([binned.get(lbl, 0) for lbl in labels])\n    # Close the polygon\n    angles  = np.append(angles, angles[0])\n    values  = np.append(values, values[0])\n\n    fig, ax = plt.subplots(figsize=(6, 6), subplot_kw={'projection': 'polar'},\n                           facecolor=BG)\n    ax.set_facecolor(SURFACE)\n\n    # Grid styling\n    ax.set_theta_zero_location('N')\n    ax.set_theta_direction(-1)\n    ax.tick_params(colors=DIM, labelsize=8)\n    ax.spines['polar'].set_color(BORDER)\n    for gridline in ax.yaxis.get_gridlines():\n        gridline.set_color(BORDER)\n        gridline.set_linewidth(0.4)\n    ax.set_rlabel_position(45)\n\n    # Compass labels\n    ax.set_thetagrids([0, 45, 90, 135, 180, 225, 270, 315],\n                      ['N','NE','E','SE','S','SW','W','NW'],\n                      color=DIM, fontsize=8)\n\n    # Filled polygon\n    ax.fill(angles, values, alpha=0.18, color=ORANGE)\n    ax.plot(angles, values, color=ORANGE, linewidth=1.8)\n\n    # Mean error ring\n    mean_err = df['pos_error_m'].mean()\n    mean_circle = np.full(361, mean_err)\n    ax.plot(np.radians(np.arange(361)), mean_circle,\n            color='white', linewidth=0.8, linestyle='--', alpha=0.25,\n            label=f'Mean {mean_err:.2f} m')\n\n    # Peak annotation\n    peak_idx = np.argmax(values[:-1])\n    peak_ang = np.degrees(angles[peak_idx])\n    peak_val = values[peak_idx]\n    ax.annotate(f'{peak_val:.1f}m @ {peak_ang:.0f}\u00b0',\n                xy=(angles[peak_idx], peak_val),\n                xytext=(angles[peak_idx], peak_val + mean_err * 0.4),\n                color=ORANGE, fontsize=7, fontfamily='monospace',\n                ha='center')\n\n    ax.set_title('DCEF \u2014 Polar Directional Bias\\nMean position error by vehicle heading',\n                 color='white', fontsize=10, pad=20, weight='bold')\n\n    tier = int(df['tier'].iloc[0])\n    fig.text(0.98, 0.98, f'TIER {tier}', color=ORANGE, fontsize=8,\n             fontfamily='monospace', weight='bold', ha='right', va='top')\n\n    ax.legend(facecolor='#161616', edgecolor=BORDER,\n              labelcolor='white', fontsize=7.5, loc='lower right')\n\n    plt.tight_layout()\n    plt.savefig(output_path, dpi=150, facecolor=BG, bbox_inches='tight')\n    print(f'[DCEF] Saved \u2192 {output_path}')\n    plt.close()\n\n\nif __name__ == '__main__':\n    if len(sys.argv) < 2:\n        print('Usage: python plot_polar.py <correlated.csv> [output.png]')\n        sys.exit(1)\n    plot_polar(sys.argv[1], sys.argv[2] if len(sys.argv) > 2 else None)\n"},
+  "plot_pod.py": {"filename": "plot_pod.py", "code": "\"\"\"\nplot_pod.py \u2014 DCEF Tool 05\nGenerates a range-binned probability of detection (PoD) curve\nwith 90% binomial confidence intervals from a DCEF correlated\nCSV. This is the primary procurement-relevant output.\n\nRequirements: pandas, matplotlib, numpy, scipy\nUsage: python plot_pod.py <correlated.csv> [output.png]\n\"\"\"\n\nimport sys\nimport numpy as np\nimport pandas as pd\nimport matplotlib.pyplot as plt\nfrom scipy.stats import binom\n\nORANGE  = '#f26115'\nGREEN   = '#4ade80'\nBG      = '#060606'\nSURFACE = '#0e0e0e'\nDIM     = '#888888'\nBORDER  = '#1a1a1a'\n\nBIN_STEP   = 50     # metres per range bin\nPOD_THRESH = 0.90   # procurement threshold line\nCI_ALPHA   = 0.10   # 90% confidence interval\n\n\ndef binom_ci(k, n, alpha=0.10):\n    \"\"\"Wilson score confidence interval for binomial proportion.\"\"\"\n    if n == 0:\n        return 0.0, 1.0\n    z   = 1.645  # 90% CI\n    p   = k / n\n    lo  = (p + z**2/(2*n) - z*np.sqrt(p*(1-p)/n + z**2/(4*n**2))) / (1 + z**2/n)\n    hi  = (p + z**2/(2*n) + z*np.sqrt(p*(1-p)/n + z**2/(4*n**2))) / (1 + z**2/n)\n    return max(0, lo), min(1, hi)\n\n\ndef plot_pod(csv_path: str, output_path: str = None):\n    if output_path is None:\n        output_path = csv_path.replace('.csv', '_pod.png')\n\n    df = pd.read_csv(csv_path)\n    df['detection_flag'] = df['detection_flag'].astype(bool)\n    print(f'[DCEF] Loaded {len(df)} records | '\n          f'Overall PoD: {df[\"detection_flag\"].mean():.1%}')\n\n    # \u2500\u2500 Bin by range \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\n    r_min = (df['range_m'].min() // BIN_STEP) * BIN_STEP\n    r_max = (df['range_m'].max() // BIN_STEP + 1) * BIN_STEP\n    edges = np.arange(r_min, r_max + BIN_STEP, BIN_STEP)\n    mids  = (edges[:-1] + edges[1:]) / 2\n\n    pods, ci_los, ci_his, ns = [], [], [], []\n    for lo, hi in zip(edges[:-1], edges[1:]):\n        sub = df[(df['range_m'] >= lo) & (df['range_m'] < hi)]\n        n   = len(sub)\n        k   = sub['detection_flag'].sum()\n        pod = k / n if n > 0 else np.nan\n        lo_ci, hi_ci = binom_ci(k, n)\n        pods.append(pod)\n        ci_los.append(lo_ci)\n        ci_his.append(hi_ci)\n        ns.append(n)\n\n    pods    = np.array(pods, dtype=float)\n    ci_los  = np.array(ci_los, dtype=float)\n    ci_his  = np.array(ci_his, dtype=float)\n    valid   = ~np.isnan(pods)\n\n    # \u2500\u2500 Plot \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\n    fig, ax = plt.subplots(figsize=(8, 5), facecolor=BG)\n    ax.set_facecolor(SURFACE)\n    ax.grid(color=BORDER, linewidth=0.4, zorder=0)\n    ax.set_axisbelow(True)\n\n    # CI band\n    ax.fill_between(mids[valid], ci_los[valid], ci_his[valid],\n                    alpha=0.15, color=ORANGE, label='90% CI')\n\n    # CI border lines\n    ax.plot(mids[valid], ci_his[valid], color=ORANGE,\n            linewidth=0.6, linestyle='--', alpha=0.35)\n    ax.plot(mids[valid], ci_los[valid], color=ORANGE,\n            linewidth=0.6, linestyle='--', alpha=0.35)\n\n    # PoD curve\n    ax.plot(mids[valid], pods[valid],\n            color=ORANGE, linewidth=2.5, zorder=4, label='PoD')\n    ax.scatter(mids[valid], pods[valid],\n               c=ORANGE, s=50, zorder=5, linewidths=0)\n\n    # 0.90 threshold\n    ax.axhline(POD_THRESH, color=GREEN, linewidth=1.0,\n               linestyle='--', alpha=0.5, label=f'PoD = {POD_THRESH}')\n    ax.text(mids[valid][-1], POD_THRESH + 0.01,\n            f'  PoD = {POD_THRESH}', color=GREEN, fontsize=7.5,\n            fontfamily='monospace', va='bottom')\n\n    # Sample count annotations\n    for mx, pod, n in zip(mids[valid], pods[valid], np.array(ns)[valid]):\n        ax.text(mx, pod + 0.02, f'n={n}',\n                ha='center', va='bottom', fontsize=6.5,\n                color=DIM, fontfamily='monospace')\n\n    # Effective range annotation\n    eff_mask = pods >= POD_THRESH\n    if eff_mask.any():\n        eff_range = mids[valid][eff_mask[valid]][-1]\n        ax.axvline(eff_range, color='white', linewidth=0.8,\n                   linestyle=':', alpha=0.3)\n        ax.text(eff_range + 5, 0.05,\n                f'Eff. range\\n{eff_range:.0f} m',\n                color=DIM, fontsize=7, fontfamily='monospace')\n\n    # Tier badge\n    tier = int(df['tier'].iloc[0])\n    ax.text(0.98, 0.02, f'TIER {tier}', transform=ax.transAxes,\n            fontsize=8, color=ORANGE, va='bottom', ha='right',\n            fontfamily='monospace', weight='bold')\n\n    ax.set_xlabel('Slant Range  (m)', color=DIM, fontsize=9)\n    ax.set_ylabel('Probability of Detection', color=DIM, fontsize=9)\n    ax.set_title('DCEF \u2014 Range-Binned Probability of Detection\\n'\n                 f'{BIN_STEP}m bins \u00b7 Wilson 90% CI',\n                 color='white', fontsize=11, pad=14, weight='bold')\n    ax.set_ylim(-0.02, 1.08)\n    ax.tick_params(colors=DIM, labelsize=8)\n    for spine in ax.spines.values():\n        spine.set_edgecolor(BORDER)\n\n    ax.legend(facecolor='#161616', edgecolor=BORDER,\n              labelcolor='white', fontsize=8, loc='lower left')\n\n    plt.tight_layout()\n    plt.savefig(output_path, dpi=150, facecolor=BG, bbox_inches='tight')\n    print(f'[DCEF] Saved \u2192 {output_path}')\n    plt.close()\n\n\nif __name__ == '__main__':\n    if len(sys.argv) < 2:\n        print('Usage: python plot_pod.py <correlated.csv> [output.png]')\n        sys.exit(1)\n    plot_pod(sys.argv[1], sys.argv[2] if len(sys.argv) > 2 else None)\n"},
+  "export_kml.py": {"filename": "export_kml.py", "code": "\"\"\"\nexport_kml.py \u2014 DCEF Tool 06\nExports a DCEF correlated CSV as a KML file containing:\n  - Ground truth track (orange LineString)\n  - Sensor-reported track (blue LineString)\n  - Detection event placemarks (green pushpins)\n  - No-detect event placemarks (grey pins, optional)\n\nLoads directly into Google Earth for site-specific overlay.\n\nRequirements: pandas, simplekml\nUsage: python export_kml.py <correlated.csv> [output.kml]\n\"\"\"\n\nimport sys\nimport pandas as pd\nimport simplekml\n\nSITE_ALT_M = 0   # AGL offset; set to site elevation MSL for accurate overlay\n\n\ndef export_kml(csv_path: str, output_path: str = None,\n               include_no_detect: bool = False):\n    if output_path is None:\n        output_path = csv_path.replace('.csv', '.kml')\n\n    df = pd.read_csv(csv_path)\n    df['detection_flag'] = df['detection_flag'].astype(bool)\n    site_id = df['site_id'].iloc[0] if 'site_id' in df.columns else 'DCEF'\n    print(f'[DCEF] Exporting {len(df)} records for {site_id}')\n\n    kml = simplekml.Kml(name=f'DCEF \u2014 {site_id}')\n\n    # \u2500\u2500 Folder: Ground Truth Track \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\n    truth_folder = kml.newfolder(name='Ground Truth (Telemetry)')\n    truth_line   = truth_folder.newlinestring(name='Truth Track')\n    truth_line.coords = [\n        (row['lon_truth'], row['lat_truth'],\n         row.get('alt_agl_m', 0) + SITE_ALT_M)\n        for _, row in df.iterrows()\n    ]\n    truth_line.altitudemode = simplekml.AltitudeMode.relativetoground\n    truth_line.extrude      = 0\n    truth_line.style.linestyle.width = 2.5\n    truth_line.style.linestyle.color = simplekml.Color.rgb(242, 97, 21)  # DCEF orange\n\n    # \u2500\u2500 Folder: Sensor Track \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\n    sensor_folder = kml.newfolder(name='Sensor Track (Radar)')\n    sensor_line   = sensor_folder.newlinestring(name='Sensor Track')\n    sensor_line.coords = [\n        (row['sensor_lon'], row['sensor_lat'],\n         row.get('alt_agl_m', 0) + SITE_ALT_M)\n        for _, row in df.iterrows()\n        if pd.notna(row.get('sensor_lat'))\n    ]\n    sensor_line.altitudemode = simplekml.AltitudeMode.relativetoground\n    sensor_line.style.linestyle.width = 1.8\n    sensor_line.style.linestyle.color = simplekml.Color.rgb(74, 158, 255)  # blue\n\n    # \u2500\u2500 Folder: Detection Events \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\n    det_folder = kml.newfolder(name='Detection Events')\n    det_df = df[df['detection_flag']]\n    for _, row in det_df.iterrows():\n        pnt = det_folder.newpoint(\n            name=f\"DET @ {row.get('range_m', '\u2014'):.0f}m\",\n            coords=[(row['lon_truth'], row['lat_truth'],\n                     row.get('alt_agl_m', 0) + SITE_ALT_M)]\n        )\n        pnt.altitudemode = simplekml.AltitudeMode.relativetoground\n        pnt.style.iconstyle.color = simplekml.Color.rgb(74, 222, 128)  # green\n        pnt.style.iconstyle.scale = 0.6\n        pnt.style.iconstyle.icon.href = (\n            'http://maps.google.com/mapfiles/kml/pushpin/grn-pushpin.png'\n        )\n        err = row.get('pos_error_m', 0)\n        pnt.description = (\n            f\"Timestamp: {row.get('timestamp_utc', '\u2014')}\\n\"\n            f\"Range: {row.get('range_m', '\u2014'):.1f} m\\n\"\n            f\"Pos error: {err:.2f} m\\n\"\n            f\"Heading: {row.get('hdg_deg', '\u2014'):.1f}\u00b0\\n\"\n            f\"Speed: {row.get('gnd_speed_ms', '\u2014'):.2f} m/s\"\n        )\n\n    # \u2500\u2500 Folder: No-Detect Events (optional) \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\n    if include_no_detect:\n        nodet_folder = kml.newfolder(name='No-Detect Events')\n        nodet_df = df[~df['detection_flag']]\n        for _, row in nodet_df.iterrows():\n            pnt = nodet_folder.newpoint(\n                name=f\"MISS @ {row.get('range_m', '\u2014'):.0f}m\",\n                coords=[(row['lon_truth'], row['lat_truth'],\n                         row.get('alt_agl_m', 0) + SITE_ALT_M)]\n            )\n            pnt.altitudemode = simplekml.AltitudeMode.relativetoground\n            pnt.style.iconstyle.color = simplekml.Color.rgb(100, 100, 100)\n            pnt.style.iconstyle.scale = 0.4\n\n    kml.save(output_path)\n    n_det = det_df.shape[0]\n    print(f'[DCEF] Saved \u2192 {output_path} | '\n          f'{n_det} detections, {len(df)-n_det} no-detects')\n\n\nif __name__ == '__main__':\n    if len(sys.argv) < 2:\n        print('Usage: python export_kml.py <correlated.csv> [output.kml] [--include-no-detect]')\n        sys.exit(1)\n    inc = '--include-no-detect' in sys.argv\n    export_kml(sys.argv[1],\n               sys.argv[2] if len(sys.argv) > 2 and not sys.argv[2].startswith('--') else None,\n               include_no_detect=inc)\n"},
+};
+
+function highlightCode(code) {
+  // Escape HTML
+  code = code.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+  // Docstring blocks first
+  code = code.replace(/("""[\s\S]*?""")/g, '<span class="dc">$1</span>');
+  // Comments
+  code = code.replace(/((?<!:)\/\/[^
+]*|#[^
+]*)/g, '<span class="cm">$1</span>');
+  // Strings
+  code = code.replace(/(&apos;[^&]*?&apos;|&quot;[^&]*?&quot;|'[^'\n]*'|"[^"\n]*")/g, '<span class="st">$1</span>');
+  // Keywords
+  const kws = ['import','from','def','class','return','if','else','elif','for','while','in','not','and','or','True','False','None','try','except','raise','with','as','pass','break','continue','lambda','yield','global','nonlocal','assert','del','is'];
+  kws.forEach(k => {
+    code = code.replace(new RegExp(`\\b(${k})\\b`, 'g'), '<span class="kw">$1</span>');
+  });
+  // Numbers
+  code = code.replace(/\b(\d+\.?\d*)\b/g, '<span class="nm">$1</span>');
+  // Function calls
+  code = code.replace(/\b([a-zA-Z_][\w]*)(\()/g, '<span class="fn">$1</span>$2');
+  return code;
+}
+
+function selectTool(slug) {
+  document.querySelectorAll('.tool-card').forEach(c => c.classList.remove('active'));
+  const card = document.querySelector(\`[data-slug="\${slug}"]\`);
+  if (card) card.classList.add('active');
+
+  const tool = TOOLS[slug];
+  if (!tool) return;
+
+  document.getElementById('cv-filename').textContent = tool.filename;
+  document.getElementById('cv-dl').href = tool.filename;
+  document.getElementById('cv-dl').download = tool.filename;
+  document.getElementById('code-display').innerHTML = highlightCode(tool.code);
+}
+
+function copyCode() {
+  const active = document.querySelector('.tool-card.active');
+  if (!active) return;
+  const slug = active.dataset.slug;
+  const tool = TOOLS[slug];
+  navigator.clipboard.writeText(tool.code).then(() => {
+    const btn = document.querySelector('[onclick="copyCode()"]');
+    const orig = btn.innerHTML;
+    btn.innerHTML = btn.innerHTML.replace('Copy', 'Copied!');
+    setTimeout(() => { btn.innerHTML = orig; }, 1500);
+  });
+}
+
+// Init first tool
+selectTool('parse_telemetry.py');
+
+// Scroll animations
+const observer = new IntersectionObserver((entries) => {
+  entries.forEach(e => { if (e.isIntersecting) { e.target.classList.add('visible'); observer.unobserve(e.target); } });
+}, { threshold: 0.06 });
+document.querySelectorAll('.fade-in').forEach(el => observer.observe(el));
+</script>
+</body>
+</html>
