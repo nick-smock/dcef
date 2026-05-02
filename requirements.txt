@@ -1,0 +1,9 @@
+# DCEF Toolchain Requirements
+# Install: pip install -r requirements.txt
+
+pyulog>=0.9.0       # PX4 ULog binary parser
+pandas>=1.5.0       # Data manipulation and CSV handling
+numpy>=1.23.0       # Numerical operations and haversine math
+matplotlib>=3.6.0   # Scatter, polar, and PoD curve plots
+simplekml>=1.3.6    # KML export for Google Earth
+scipy>=1.9.0        # Binomial confidence intervals for PoD curves
