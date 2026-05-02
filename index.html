@@ -1017,43 +1017,66 @@
     requestAnimationFrame(loop);
   })();
 
-  // ── PROBLEM CANVAS — fragmented nodes ────────────────
+  // ── PROBLEM CANVAS — fragmented nodes + mouse parallax ──
   (function() {
     const canvas = document.getElementById('problem-canvas');
     const ctx = canvas.getContext('2d');
     let W, H, nodes = [];
 
-    // Three isolated clusters representing fragmented evaluations
+    // Mouse state — normalized -1 to 1 relative to canvas center
+    let mouseX = 0, mouseY = 0;
+    let targetMouseX = 0, targetMouseY = 0;
+
     const CLUSTERS = [
-      { cx: 0.18, cy: 0.35, color: '#f26115', label: 'Site Alpha' },
-      { cx: 0.65, cy: 0.22, color: '#f26115', label: 'Site Bravo' },
-      { cx: 0.50, cy: 0.70, color: '#f26115', label: 'Site Charlie' },
+      { cx: 0.18, cy: 0.35, label: 'Site Alpha', depth: 1.0 },
+      { cx: 0.65, cy: 0.22, label: 'Site Bravo', depth: 0.6 },
+      { cx: 0.50, cy: 0.70, label: 'Site Charlie', depth: 0.8 },
     ];
 
+    // Track mouse over the SECTION (not just canvas) for better UX
+    const section = document.getElementById('problem');
+    section.addEventListener('mousemove', e => {
+      const rect = canvas.getBoundingClientRect();
+      targetMouseX = ((e.clientX - rect.left) / W - 0.5) * 2;
+      targetMouseY = ((e.clientY - rect.top)  / H - 0.5) * 2;
+    });
+    section.addEventListener('mouseleave', () => {
+      targetMouseX = 0;
+      targetMouseY = 0;
+    });
+
     function resize() {
-      W = canvas.width = canvas.offsetWidth;
-      H = canvas.height = canvas.offsetHeight;
+      const dpr = window.devicePixelRatio || 1;
+      const rect = canvas.parentElement.getBoundingClientRect();
+      W = rect.width;
+      H = parseInt(canvas.parentElement.style.height) || 380;
+      canvas.width  = W * dpr;
+      canvas.height = H * dpr;
+      canvas.style.width  = W + 'px';
+      canvas.style.height = H + 'px';
+      ctx.scale(dpr, dpr);
       buildNodes();
     }
 
     function buildNodes() {
       nodes = [];
       CLUSTERS.forEach((cl, ci) => {
-        const count = 10 + Math.floor(Math.random() * 6);
+        const count = 12 + Math.floor(Math.random() * 5);
         for (let i = 0; i < count; i++) {
           const angle = Math.random() * Math.PI * 2;
-          const r = 20 + Math.random() * 55;
+          const r = 18 + Math.random() * 52;
           nodes.push({
-            cx: cl.cx,
-            cy: cl.cy,
-            x: cl.cx * W + Math.cos(angle) * r,
-            y: cl.cy * H + Math.sin(angle) * r,
+            // base position (fractions of canvas)
+            bx: cl.cx * W + Math.cos(angle) * r,
+            by: cl.cy * H + Math.sin(angle) * r,
+            // center of cluster for parallax anchor
+            clCx: cl.cx,
+            clCy: cl.cy,
             r: 2 + Math.random() * 3,
             cluster: ci,
             phase: Math.random() * Math.PI * 2,
-            speed: 0.5 + Math.random() * 0.8,
-            color: cl.color,
-            label: cl.label,
+            speed: 0.4 + Math.random() * 0.7,
+            depth: cl.depth * (0.8 + Math.random() * 0.4), // per-node depth variation
           });
         }
       });
@@ -1062,67 +1085,72 @@
     function draw(t) {
       ctx.clearRect(0, 0, W, H);
 
-      // Draw intra-cluster faint connections
+      // Smooth mouse follow
+      mouseX += (targetMouseX - mouseX) * 0.06;
+      mouseY += (targetMouseY - mouseY) * 0.06;
+
+      // Parallax strength in pixels
+      const PX = 22;
+
+      // Offset each cluster by its depth × mouse position
+      const clusterOffsets = CLUSTERS.map(cl => ({
+        ox: mouseX * PX * cl.depth,
+        oy: mouseY * PX * cl.depth * 0.6,
+      }));
+
+      // Compute per-node screen positions
+      const positions = nodes.map(n => {
+        const off = clusterOffsets[n.cluster];
+        return {
+          x: n.bx + off.ox,
+          y: n.by + off.oy,
+        };
+      });
+
+      // Mouse world position (for hover glow)
+      const rect = canvas.getBoundingClientRect();
+
+      // Intra-cluster connections
       for (let i = 0; i < nodes.length; i++) {
         for (let j = i + 1; j < nodes.length; j++) {
           if (nodes[i].cluster !== nodes[j].cluster) continue;
-          const dx = nodes[i].x - nodes[j].x;
-          const dy = nodes[i].y - nodes[j].y;
+          const dx = positions[i].x - positions[j].x;
+          const dy = positions[i].y - positions[j].y;
           const dist = Math.sqrt(dx*dx + dy*dy);
-          if (dist < 65) {
+          if (dist < 70) {
             ctx.beginPath();
-            ctx.moveTo(nodes[i].x, nodes[i].y);
-            ctx.lineTo(nodes[j].x, nodes[j].y);
-            ctx.strokeStyle = `rgba(242,97,21,${0.12 * (1 - dist/65)})`;
+            ctx.moveTo(positions[i].x, positions[i].y);
+            ctx.lineTo(positions[j].x, positions[j].y);
+            ctx.strokeStyle = `rgba(242,97,21,${0.14 * (1 - dist/70)})`;
             ctx.lineWidth = 0.5;
             ctx.stroke();
           }
         }
       }
 
-      // Draw cross-cluster broken/ghosted lines — "the problem"
+      // Cross-cluster broken lines + X marks
       CLUSTERS.forEach((a, ai) => {
         CLUSTERS.forEach((b, bi) => {
           if (ai >= bi) return;
-          const x1 = a.cx * W, y1 = a.cy * H;
-          const x2 = b.cx * W, y2 = b.cy * H;
+          const x1 = a.cx * W + clusterOffsets[ai].ox;
+          const y1 = a.cy * H + clusterOffsets[ai].oy;
+          const x2 = b.cx * W + clusterOffsets[bi].ox;
+          const y2 = b.cy * H + clusterOffsets[bi].oy;
+
           ctx.save();
           ctx.setLineDash([4, 12]);
           ctx.beginPath();
           ctx.moveTo(x1, y1);
           ctx.lineTo(x2, y2);
-          ctx.strokeStyle = 'rgba(255,255,255,0.07)';
+          ctx.strokeStyle = 'rgba(255,255,255,0.06)';
           ctx.lineWidth = 0.8;
           ctx.stroke();
           ctx.restore();
-        });
-      });
 
-      // Draw nodes
-      for (const n of nodes) {
-        const pulse = Math.sin(t * n.speed + n.phase) * 0.5 + 0.5;
-        ctx.beginPath();
-        ctx.arc(n.x, n.y, n.r + pulse, 0, Math.PI * 2);
-        ctx.fillStyle = `rgba(242,97,21,${0.55 + pulse * 0.3})`;
-        ctx.fill();
-      }
-
-      // Cluster labels
-      ctx.font = '500 0.62rem "Share Tech Mono", monospace';
-      CLUSTERS.forEach(cl => {
-        ctx.fillStyle = 'rgba(242,97,21,0.5)';
-        ctx.letterSpacing = '0.12em';
-        ctx.fillText(cl.label.toUpperCase(), cl.cx * W - 28, cl.cy * H - 65);
-      });
-
-      // "No connection" X marks between clusters
-      CLUSTERS.forEach((a, ai) => {
-        CLUSTERS.forEach((b, bi) => {
-          if (ai >= bi) return;
-          const mx = (a.cx + b.cx) / 2 * W;
-          const my = (a.cy + b.cy) / 2 * H;
+          // X mark at midpoint
+          const mx = (x1 + x2) / 2, my = (y1 + y2) / 2;
           ctx.save();
-          ctx.strokeStyle = 'rgba(255,255,255,0.18)';
+          ctx.strokeStyle = 'rgba(255,255,255,0.2)';
           ctx.lineWidth = 1;
           ctx.beginPath();
           ctx.moveTo(mx - 5, my - 5); ctx.lineTo(mx + 5, my + 5);
@@ -1131,6 +1159,47 @@
           ctx.restore();
         });
       });
+
+      // Nodes — with cursor proximity glow
+      nodes.forEach((n, i) => {
+        const pos = positions[i];
+        const pulse = Math.sin(t * n.speed + n.phase) * 0.5 + 0.5;
+
+        // Distance from mouse in canvas coords
+        const mxCanvas = (mouseX * 0.5 + 0.5) * W;
+        const myCanvas = (mouseY * 0.5 + 0.5) * H;
+        const dx = pos.x - mxCanvas;
+        const dy = pos.y - myCanvas;
+        const mdist = Math.sqrt(dx*dx + dy*dy);
+        const proximity = Math.max(0, 1 - mdist / 120); // glow within 120px
+
+        const baseAlpha = 0.5 + pulse * 0.3;
+        const glowAlpha = baseAlpha + proximity * 0.45;
+        const radius = n.r + pulse * 0.8 + proximity * 2.5;
+
+        // Outer glow ring on hover
+        if (proximity > 0.15) {
+          ctx.beginPath();
+          ctx.arc(pos.x, pos.y, radius + 4 + proximity * 6, 0, Math.PI * 2);
+          ctx.fillStyle = `rgba(242,97,21,${proximity * 0.12})`;
+          ctx.fill();
+        }
+
+        ctx.beginPath();
+        ctx.arc(pos.x, pos.y, radius, 0, Math.PI * 2);
+        ctx.fillStyle = `rgba(242,97,21,${Math.min(1, glowAlpha)})`;
+        ctx.fill();
+      });
+
+      // Cluster labels — parallax too
+      ctx.font = '500 10px "Share Tech Mono", monospace';
+      CLUSTERS.forEach((cl, ci) => {
+        const off = clusterOffsets[ci];
+        const lx = cl.cx * W + off.ox - 28;
+        const ly = cl.cy * H + off.oy - 62;
+        ctx.fillStyle = 'rgba(242,97,21,0.5)';
+        ctx.fillText(cl.label.toUpperCase(), lx, ly);
+      });
     }
 
     function loop(t) {
@@ -1138,7 +1207,10 @@
       requestAnimationFrame(loop);
     }
 
-    window.addEventListener('resize', resize);
+    window.addEventListener('resize', () => {
+      ctx.resetTransform();
+      resize();
+    });
     resize();
     requestAnimationFrame(loop);
   })();
